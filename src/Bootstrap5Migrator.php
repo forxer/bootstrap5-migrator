@@ -9,11 +9,11 @@ class Bootstrap5Migrator
 {
     protected array $packageJsonChanges = [
         'bootstrap' => '^5.3.0',
-        '@popperjs/core' => '^2.11.8'
+        '@popperjs/core' => '^2.11.8',
     ];
 
     protected array $packagesToRemove = [
-        'popper.js' // Remplacé par @popperjs/core
+        'popper.js', // Remplacé par @popperjs/core
     ];
 
     // Mappings des classes Bootstrap 4 → Bootstrap 5
@@ -123,18 +123,18 @@ class Bootstrap5Migrator
 
     public function createBackup(): void
     {
-        $backupDir = base_path('bootstrap-migration-backup-' . date('Y-m-d-H-i-s'));
+        $backupDir = base_path('bootstrap-migration-backup-'.date('Y-m-d-H-i-s'));
 
         File::makeDirectory($backupDir, 0755, true);
-        File::copyDirectory(resource_path(), $backupDir . '/resources');
-        File::copy(base_path('package.json'), $backupDir . '/package.json');
+        File::copyDirectory(resource_path(), $backupDir.'/resources');
+        File::copy(base_path('package.json'), $backupDir.'/package.json');
 
         if (File::exists(base_path('webpack.mix.js'))) {
-            File::copy(base_path('webpack.mix.js'), $backupDir . '/webpack.mix.js');
+            File::copy(base_path('webpack.mix.js'), $backupDir.'/webpack.mix.js');
         }
 
         if (File::exists(base_path('vite.config.js'))) {
-            File::copy(base_path('vite.config.js'), $backupDir . '/vite.config.js');
+            File::copy(base_path('vite.config.js'), $backupDir.'/vite.config.js');
         }
     }
 
@@ -142,7 +142,7 @@ class Bootstrap5Migrator
     {
         $packageJsonPath = base_path('package.json');
 
-        if (!File::exists($packageJsonPath)) {
+        if (! File::exists($packageJsonPath)) {
             throw new \Exception('Le fichier package.json n\'existe pas.');
         }
 
@@ -167,14 +167,14 @@ class Bootstrap5Migrator
         }
 
         // Gestion de jQuery (optionnelle)
-        if (!$skipJquery) {
+        if (! $skipJquery) {
             // Maintenir jQuery mais avertir l'utilisateur
             if (isset($packageJson['dependencies']['jquery']) || isset($packageJson['devDependencies']['jquery'])) {
                 // Garde jQuery mais on l'indique dans les logs
             }
         }
 
-        if (!$dryRun) {
+        if (! $dryRun) {
             File::put($packageJsonPath, json_encode($packageJson, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
         }
     }
@@ -185,8 +185,8 @@ class Bootstrap5Migrator
         $process->setTimeout(300);
         $process->run();
 
-        if (!$process->isSuccessful()) {
-            throw new \Exception('Échec de l\'installation des dépendances NPM: ' . $process->getErrorOutput());
+        if (! $process->isSuccessful()) {
+            throw new \Exception('Échec de l\'installation des dépendances NPM: '.$process->getErrorOutput());
         }
     }
 
@@ -220,10 +220,10 @@ class Bootstrap5Migrator
 
             // Remplacement des classes dans les fichiers SCSS
             foreach ($this->classReplacements as $old => $new) {
-                $content = str_replace('.' . $old, '.' . $new, $content);
+                $content = str_replace('.'.$old, '.'.$new, $content);
             }
 
-            if ($content !== $originalContent && !$dryRun) {
+            if ($content !== $originalContent && ! $dryRun) {
                 File::put($file, $content);
             }
         }
@@ -274,7 +274,7 @@ class Bootstrap5Migrator
                 $content = str_replace($old, $new, $content);
             }
 
-            if ($content !== $originalContent && !$dryRun) {
+            if ($content !== $originalContent && ! $dryRun) {
                 File::put($file, $content);
             }
         }
@@ -300,10 +300,10 @@ class Bootstrap5Migrator
                 // Gestion des classes avec suffixes numériques (ml-1, ml-2, etc.)
                 if (str_ends_with($old, '-')) {
                     for ($i = 0; $i <= 5; $i++) {
-                        $content = $this->replaceClassInContent($content, $old . $i, $new . $i);
+                        $content = $this->replaceClassInContent($content, $old.$i, $new.$i);
                     }
                     // Auto, n1, n2, etc.
-                    $content = $this->replaceClassInContent($content, $old . 'auto', $new . 'auto');
+                    $content = $this->replaceClassInContent($content, $old.'auto', $new.'auto');
                 } else {
                     $content = $this->replaceClassInContent($content, $old, $new);
                 }
@@ -315,7 +315,7 @@ class Bootstrap5Migrator
             // Cas spéciaux pour les input groups
             $content = $this->migrateInputGroups($content);
 
-            if ($content !== $originalContent && !$dryRun) {
+            if ($content !== $originalContent && ! $dryRun) {
                 File::put($file, $content);
             }
         }
@@ -325,15 +325,15 @@ class Bootstrap5Migrator
     {
         // Remplacement dans les attributs class="..."
         $content = preg_replace(
-            '/class="([^"]*)\b' . preg_quote($oldClass, '/') . '\b([^"]*)"/',
-            'class="$1' . $newClass . '$2"',
+            '/class="([^"]*)\b'.preg_quote($oldClass, '/').'\b([^"]*)"/',
+            'class="$1'.$newClass.'$2"',
             $content
         );
 
         // Remplacement dans les attributs class='...'
         $content = preg_replace(
-            "/class='([^']*)\b" . preg_quote($oldClass, '/') . "\b([^']*)'/",
-            "class='$1" . $newClass . "$2'",
+            "/class='([^']*)\b".preg_quote($oldClass, '/')."\b([^']*)'/",
+            "class='$1".$newClass."$2'",
             $content
         );
 
@@ -390,14 +390,14 @@ class Bootstrap5Migrator
         $process->setTimeout(300);
         $process->run();
 
-        if (!$process->isSuccessful()) {
+        if (! $process->isSuccessful()) {
             // Fallback vers npm run build si dev échoue
             $process = new Process(['npm', 'run', 'build'], base_path());
             $process->setTimeout(300);
             $process->run();
 
-            if (!$process->isSuccessful()) {
-                throw new \Exception('Échec de la compilation des assets: ' . $process->getErrorOutput());
+            if (! $process->isSuccessful()) {
+                throw new \Exception('Échec de la compilation des assets: '.$process->getErrorOutput());
             }
         }
     }
@@ -518,7 +518,7 @@ class Bootstrap5Migrator
         return array_filter(array_map(function ($file) {
             return $file->getPathname();
         }, $files), function ($file) {
-            return in_array(pathinfo($file, PATHINFO_EXTENSION), ['css', 'scss', 'sass']);
+            return \in_array(pathinfo($file, PATHINFO_EXTENSION), ['css', 'scss', 'sass']);
         });
     }
 
@@ -538,7 +538,7 @@ class Bootstrap5Migrator
         return array_filter(array_map(function ($file) {
             return $file->getPathname();
         }, $files), function ($file) {
-            return in_array(pathinfo($file, PATHINFO_EXTENSION), ['js', 'ts']);
+            return \in_array(pathinfo($file, PATHINFO_EXTENSION), ['js', 'ts']);
         });
     }
 

@@ -3,7 +3,7 @@
 namespace Bootstrap5Migrator\Tests;
 
 use Bootstrap5Migrator\Bootstrap5Migrator;
-use Bootstrap5Migrator\Bootstrap5MigratorServiceProvider;
+use Bootstrap5Migrator\ServiceProvider;
 use Illuminate\Support\Facades\File;
 use Orchestra\Testbench\TestCase;
 
@@ -11,10 +11,10 @@ class Bootstrap5MigratorTest extends TestCase
 {
     protected function getPackageProviders($app)
     {
-        return [Bootstrap5MigratorServiceProvider::class];
+        return [ServiceProvider::class];
     }
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -24,7 +24,7 @@ class Bootstrap5MigratorTest extends TestCase
         File::makeDirectory(resource_path('js'), 0755, true, true);
     }
 
-    public function tearDown(): void
+    protected function tearDown(): void
     {
         // Nettoyer les fichiers de test
         if (File::exists(base_path('package.json.backup'))) {
@@ -41,8 +41,8 @@ class Bootstrap5MigratorTest extends TestCase
             'devDependencies' => [
                 'bootstrap' => '^4.6.0',
                 'popper.js' => '^1.16.1',
-                'jquery' => '^3.6.0'
-            ]
+                'jquery' => '^3.6.0',
+            ],
         ], JSON_PRETTY_PRINT);
 
         File::put($packageJsonPath, $originalContent);
@@ -107,13 +107,13 @@ class Bootstrap5MigratorTest extends TestCase
                 'badge-primary' => 'bg-primary', 'badge-warning' => 'bg-warning text-dark',
                 'media' => 'd-flex', 'media-body' => 'flex-grow-1 ms-3',
                 'jumbotron' => 'bg-light p-5 rounded-3', 'close' => 'btn-close',
-                'sr-only' => 'visually-hidden'
+                'sr-only' => 'visually-hidden',
             ];
 
             foreach ($classReplacements as $old => $new) {
                 $result = preg_replace(
-                    '/class="([^"]*)\b' . preg_quote($old, '/') . '\b([^"]*)"/',
-                    'class="$1' . $new . '$2"',
+                    '/class="([^"]*)\b'.preg_quote($old, '/').'\b([^"]*)"/',
+                    'class="$1'.$new.'$2"',
                     $result
                 );
             }
@@ -126,20 +126,16 @@ class Bootstrap5MigratorTest extends TestCase
     {
         $testCases = [
             // Modal
-            '<button data-toggle="modal" data-target="#myModal">Open</button>' =>
-            '<button data-bs-toggle="modal" data-bs-target="#myModal">Open</button>',
+            '<button data-toggle="modal" data-target="#myModal">Open</button>' => '<button data-bs-toggle="modal" data-bs-target="#myModal">Open</button>',
 
             // Dropdown
-            '<button data-toggle="dropdown">Menu</button>' =>
-            '<button data-bs-toggle="dropdown">Menu</button>',
+            '<button data-toggle="dropdown">Menu</button>' => '<button data-bs-toggle="dropdown">Menu</button>',
 
             // Dismiss
-            '<button data-dismiss="modal">Close</button>' =>
-            '<button data-bs-dismiss="modal">Close</button>',
+            '<button data-dismiss="modal">Close</button>' => '<button data-bs-dismiss="modal">Close</button>',
 
             // Carousel
-            '<div data-ride="carousel" data-interval="5000"></div>' =>
-            '<div data-bs-ride="carousel" data-bs-interval="5000"></div>',
+            '<div data-ride="carousel" data-interval="5000"></div>' => '<div data-bs-ride="carousel" data-bs-interval="5000"></div>',
         ];
 
         foreach ($testCases as $input => $expected) {
@@ -217,8 +213,8 @@ class Bootstrap5MigratorTest extends TestCase
             'devDependencies' => [
                 'bootstrap' => '^4.6.0',
                 'jquery' => '^3.6.0',
-                'popper.js' => '^1.16.1'
-            ]
+                'popper.js' => '^1.16.1',
+            ],
         ]);
         File::put(base_path('package.json'), $packageJsonContent);
 
@@ -251,7 +247,7 @@ class Bootstrap5MigratorTest extends TestCase
     public function test_command_registration()
     {
         $this->artisan('bootstrap:migrate-to-5 --help')
-             ->assertExitCode(0);
+            ->assertExitCode(0);
     }
 
     public function test_dry_run_does_not_modify_files()
