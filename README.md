@@ -21,10 +21,10 @@ composer require forxer/bootstrap5-migrator
 
 ## Configuration
 
-Publiez le fichier de configuration :
+Si besoin, publiez le fichier de configuration :
 
 ```bash
-php artisan vendor:publish --provider="Bootstrap5Migrator\ServiceProvider" --tag="config"
+php artisan vendor:publish --tag="bootstrap5-migrator-config"
 ```
 
 ## Utilisation

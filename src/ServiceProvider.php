@@ -17,7 +17,7 @@ class ServiceProvider extends BaseServiceProvider
 
         $this->publishes([
             __DIR__.'/../config/bootstrap5-migrator.php' => config_path('bootstrap5-migrator.php'),
-        ], 'config');
+        ], 'bootstrap5-migrator-config');
     }
 
     public function register(): void
