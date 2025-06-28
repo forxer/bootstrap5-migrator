@@ -3,6 +3,7 @@
 namespace Bootstrap5Migrator\Commands;
 
 use Bootstrap5Migrator\Bootstrap5Migrator;
+use Exception;
 use Illuminate\Console\Command;
 
 class MigrateToBootstrap5Command extends Command
@@ -15,7 +16,7 @@ class MigrateToBootstrap5Command extends Command
 
     protected $description = 'Migrate your Laravel application from Bootstrap 4.6 to Bootstrap 5.x';
 
-    public function handle(Bootstrap5Migrator $migrator)
+    public function handle(Bootstrap5Migrator $migrator): ?int
     {
         $this->info('🚀 Début de la migration vers Bootstrap 5...');
         $this->warn('⚠️  ATTENTION: Bootstrap 5 supprime jQuery comme dépendance !');
@@ -38,7 +39,7 @@ class MigrateToBootstrap5Command extends Command
         if (! $this->option('force') && ! $this->confirm('Voulez-vous continuer avec la migration ?')) {
             $this->info('Migration annulée.');
 
-            return;
+            return null;
         }
 
         try {
@@ -73,8 +74,8 @@ class MigrateToBootstrap5Command extends Command
             $this->info('✅ Migration terminée avec succès !');
             $this->displayPostMigrationInstructions();
 
-        } catch (\Exception $e) {
-            $this->error('❌ Erreur lors de la migration : '.$e->getMessage());
+        } catch (Exception $exception) {
+            $this->error('❌ Erreur lors de la migration : '.$exception->getMessage());
 
             return 1;
         }

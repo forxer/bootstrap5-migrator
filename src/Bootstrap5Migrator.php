@@ -2,6 +2,7 @@
 
 namespace Bootstrap5Migrator;
 
+use Exception;
 use Illuminate\Support\Facades\File;
 use Symfony\Component\Process\Process;
 
@@ -110,15 +111,13 @@ class Bootstrap5Migrator
 
     public function analyzeApplication(): array
     {
-        $analysis = [
+        return [
             'bootstrap_version' => $this->detectBootstrapVersion(),
             'jquery_usage' => $this->detectJQueryUsage(),
             'popper_usage' => $this->detectPopperUsage(),
             'deprecated_classes' => $this->findDeprecatedClasses(),
             'js_components' => $this->findJSComponents(),
         ];
-
-        return $analysis;
     }
 
     public function createBackup(): void
@@ -143,7 +142,7 @@ class Bootstrap5Migrator
         $packageJsonPath = base_path('package.json');
 
         if (! File::exists($packageJsonPath)) {
-            throw new \Exception('Le fichier package.json n\'existe pas.');
+            throw new Exception("Le fichier package.json n'existe pas.");
         }
 
         $packageJson = json_decode(File::get($packageJsonPath), true);
@@ -167,11 +166,10 @@ class Bootstrap5Migrator
         }
 
         // Gestion de jQuery (optionnelle)
-        if (! $skipJquery) {
-            // Maintenir jQuery mais avertir l'utilisateur
-            if (isset($packageJson['dependencies']['jquery']) || isset($packageJson['devDependencies']['jquery'])) {
-                // Garde jQuery mais on l'indique dans les logs
-            }
+        // Maintenir jQuery mais avertir l'utilisateur
+        if (! $skipJquery && (isset($packageJson['dependencies']['jquery']) || isset($packageJson['devDependencies']['jquery']))) {
+            // Garde jQuery mais on l'indique dans les logs
+
         }
 
         if (! $dryRun) {
@@ -186,7 +184,7 @@ class Bootstrap5Migrator
         $process->run();
 
         if (! $process->isSuccessful()) {
-            throw new \Exception('Échec de l\'installation des dépendances NPM: '.$process->getErrorOutput());
+            throw new Exception('Échec de l\'installation des dépendances NPM: '.$process->getErrorOutput());
         }
     }
 
@@ -213,7 +211,7 @@ class Bootstrap5Migrator
 
             // Remplacement des variables SCSS
             foreach ($this->scssVariableChanges as $old => $new) {
-                if (strpos($content, $old) !== false && strpos($content, $new) === false) {
+                if (str_contains($content, $old) && \in_array(str_contains($content, (string) $new), [0, false], true)) {
                     $content = str_replace($old, $new, $content);
                 }
             }
@@ -302,6 +300,7 @@ class Bootstrap5Migrator
                     for ($i = 0; $i <= 5; $i++) {
                         $content = $this->replaceClassInContent($content, $old.$i, $new.$i);
                     }
+
                     // Auto, n1, n2, etc.
                     $content = $this->replaceClassInContent($content, $old.'auto', $new.'auto');
                 } else {
@@ -334,7 +333,7 @@ class Bootstrap5Migrator
         $content = preg_replace(
             "/class='([^']*)\b".preg_quote($oldClass, '/')."\b([^']*)'/",
             "class='$1".$newClass."$2'",
-            $content
+            (string) $content
         );
 
         return $content;
@@ -353,7 +352,7 @@ class Bootstrap5Migrator
         $content = preg_replace(
             '/<div class="([^"]*\s)?form-row(\s[^"]*)?">/',
             '<div class="$1row g-3$2">',
-            $content
+            (string) $content
         );
 
         return $content;
@@ -374,13 +373,11 @@ class Bootstrap5Migrator
             $content
         );
 
-        $content = str_replace(
+        return str_replace(
             '<div class="input-group-append"><span class="input-group-text">',
             '<span class="input-group-text">',
             $content
         );
-
-        return $content;
     }
 
     public function compileAssets(): void
@@ -397,7 +394,7 @@ class Bootstrap5Migrator
             $process->run();
 
             if (! $process->isSuccessful()) {
-                throw new \Exception('Échec de la compilation des assets: '.$process->getErrorOutput());
+                throw new Exception('Échec de la compilation des assets: '.$process->getErrorOutput());
             }
         }
     }
@@ -460,7 +457,7 @@ class Bootstrap5Migrator
             $content = File::get($file);
 
             foreach (array_keys($this->classReplacements) as $oldClass) {
-                if (strpos($content, $oldClass) !== false) {
+                if (str_contains($content, $oldClass)) {
                     $deprecatedClasses[] = $oldClass;
                 }
             }
@@ -489,7 +486,7 @@ class Bootstrap5Migrator
             $content = File::get($file);
 
             foreach ($searchPatterns as $pattern => $description) {
-                if (strpos($content, $pattern) !== false) {
+                if (str_contains($content, $pattern)) {
                     $components[] = $description;
                 }
             }
@@ -515,11 +512,7 @@ class Bootstrap5Migrator
             }
         }
 
-        return array_filter(array_map(function ($file) {
-            return $file->getPathname();
-        }, $files), function ($file) {
-            return \in_array(pathinfo($file, PATHINFO_EXTENSION), ['css', 'scss', 'sass']);
-        });
+        return array_filter(array_map(fn ($file) => $file->getPathname(), $files), fn ($file): bool => \in_array(pathinfo((string) $file, PATHINFO_EXTENSION), ['css', 'scss', 'sass']));
     }
 
     protected function findJavaScriptFiles(): array
@@ -535,21 +528,13 @@ class Bootstrap5Migrator
             }
         }
 
-        return array_filter(array_map(function ($file) {
-            return $file->getPathname();
-        }, $files), function ($file) {
-            return \in_array(pathinfo($file, PATHINFO_EXTENSION), ['js', 'ts']);
-        });
+        return array_filter(array_map(fn ($file) => $file->getPathname(), $files), fn ($file): bool => \in_array(pathinfo((string) $file, PATHINFO_EXTENSION), ['js', 'ts']));
     }
 
     protected function findBladeFiles(): array
     {
         $files = File::allFiles(resource_path('views'));
 
-        return array_filter(array_map(function ($file) {
-            return $file->getPathname();
-        }, $files), function ($file) {
-            return str_ends_with($file, '.blade.php') || pathinfo($file, PATHINFO_EXTENSION) === 'php';
-        });
+        return array_filter(array_map(fn ($file) => $file->getPathname(), $files), fn ($file): bool => str_ends_with((string) $file, '.blade.php') || pathinfo((string) $file, PATHINFO_EXTENSION) === 'php');
     }
 }

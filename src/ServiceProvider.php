@@ -7,7 +7,7 @@ use Illuminate\Support\ServiceProvider as BaseServiceProvider;
 
 class ServiceProvider extends BaseServiceProvider
 {
-    public function boot()
+    public function boot(): void
     {
         if ($this->app->runningInConsole()) {
             $this->commands([
@@ -20,7 +20,7 @@ class ServiceProvider extends BaseServiceProvider
         ], 'config');
     }
 
-    public function register()
+    public function register(): void
     {
         $this->mergeConfigFrom(
             __DIR__.'/../config/bootstrap5-migrator.php', 'bootstrap5-migrator'
