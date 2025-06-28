@@ -70,12 +70,12 @@ class DeprecatedClassAnalyzer
                 $matches = $this->findClassInContent($content, $class);
 
                 if ($matches > 0) {
-                    if (!isset($results['classes'][$class])) {
+                    if (! isset($results['classes'][$class])) {
                         $results['classes'][$class] = [
                             'replacement' => $info['replacement'],
                             'severity' => $info['severity'],
                             'count' => 0,
-                            'files' => []
+                            'files' => [],
                         ];
                     }
 
@@ -91,10 +91,10 @@ class DeprecatedClassAnalyzer
 
         // Générer le résumé
         $results['summary'] = [
-            'total_deprecated_classes' => count($results['classes']),
-            'high_severity' => count(array_filter($results['classes'], fn($c) => $c['severity'] === 'high')),
-            'medium_severity' => count(array_filter($results['classes'], fn($c) => $c['severity'] === 'medium')),
-            'low_severity' => count(array_filter($results['classes'], fn($c) => $c['severity'] === 'low')),
+            'total_deprecated_classes' => \count($results['classes']),
+            'high_severity' => \count(array_filter($results['classes'], fn ($c) => $c['severity'] === 'high')),
+            'medium_severity' => \count(array_filter($results['classes'], fn ($c) => $c['severity'] === 'medium')),
+            'low_severity' => \count(array_filter($results['classes'], fn ($c) => $c['severity'] === 'low')),
         ];
 
         return $results;
@@ -122,6 +122,7 @@ class DeprecatedClassAnalyzer
                 foreach ($iterator as $file) {
                     if ($file->isFile()) {
                         $filename = $file->getFilename();
+
                         foreach ($extensions as $ext) {
                             if (str_ends_with($filename, $ext)) {
                                 $files[] = $file->getPathname();
@@ -140,12 +141,13 @@ class DeprecatedClassAnalyzer
     {
         // Recherche les classes dans les attributs class="..." et class='...'
         $patterns = [
-            '/class="[^"]*\b' . preg_quote($class, '/') . '\b[^"]*"/',
-            "/class='[^']*\b" . preg_quote($class, '/') . "\b[^']*'/",
-            '/\.' . preg_quote($class, '/') . '\b/', // CSS selectors
+            '/class="[^"]*\b'.preg_quote($class, '/').'\b[^"]*"/',
+            "/class='[^']*\b".preg_quote($class, '/')."\b[^']*'/",
+            '/\.'.preg_quote($class, '/').'\b/', // CSS selectors
         ];
 
         $totalMatches = 0;
+
         foreach ($patterns as $pattern) {
             $totalMatches += preg_match_all($pattern, $content);
         }
@@ -162,7 +164,7 @@ class DeprecatedClassAnalyzer
             if (str_contains($line, $class)) {
                 $locations[] = [
                     'line' => $lineNumber + 1,
-                    'content' => trim($line)
+                    'content' => trim($line),
                 ];
             }
         }

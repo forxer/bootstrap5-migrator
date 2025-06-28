@@ -12,9 +12,13 @@ use Illuminate\Support\Facades\File;
 class MigrationReporter
 {
     protected $migrator;
+
     protected $classAnalyzer;
+
     protected $cdnAnalyzer;
+
     protected $specialAnalyzer;
+
     protected $validator;
 
     public function __construct(
@@ -53,6 +57,7 @@ class MigrationReporter
             'migration_checklist' => $this->generateMigrationChecklist(),
         ];
     }
+
     /**
      * Génère un rapport de comparaison avant/après migration
      */
@@ -61,35 +66,36 @@ class MigrationReporter
         $comparison = [
             'meta' => [
                 'generated_at' => now()->toDateTimeString(),
-                'comparison_type' => 'before_after_migration'
+                'comparison_type' => 'before_after_migration',
             ],
             'score_improvement' => [
                 'before' => $beforeData['validation']['score'] ?? 0,
                 'after' => $afterData['validation']['score'] ?? 0,
-                'improvement' => ($afterData['validation']['score'] ?? 0) - ($beforeData['validation']['score'] ?? 0)
+                'improvement' => ($afterData['validation']['score'] ?? 0) - ($beforeData['validation']['score'] ?? 0),
             ],
             'issues_resolved' => [
                 'deprecated_classes' => [
-                    'before' => count($beforeData['analysis']['deprecated_classes']['classes'] ?? []),
-                    'after' => count($afterData['analysis']['deprecated_classes']['classes'] ?? []),
-                    'resolved' => count($beforeData['analysis']['deprecated_classes']['classes'] ?? []) - count($afterData['analysis']['deprecated_classes']['classes'] ?? [])
+                    'before' => \count($beforeData['analysis']['deprecated_classes']['classes'] ?? []),
+                    'after' => \count($afterData['analysis']['deprecated_classes']['classes'] ?? []),
+                    'resolved' => \count($beforeData['analysis']['deprecated_classes']['classes'] ?? []) - \count($afterData['analysis']['deprecated_classes']['classes'] ?? []),
                 ],
                 'cdn_links' => [
-                    'before' => count($beforeData['analysis']['cdn_links'] ?? []),
-                    'after' => count($afterData['analysis']['cdn_links'] ?? []),
-                    'resolved' => count($beforeData['analysis']['cdn_links'] ?? []) - count($afterData['analysis']['cdn_links'] ?? [])
+                    'before' => \count($beforeData['analysis']['cdn_links'] ?? []),
+                    'after' => \count($afterData['analysis']['cdn_links'] ?? []),
+                    'resolved' => \count($beforeData['analysis']['cdn_links'] ?? []) - \count($afterData['analysis']['cdn_links'] ?? []),
                 ],
                 'special_cases' => [
-                    'before' => count($beforeData['analysis']['special_cases']['issues'] ?? []),
-                    'after' => count($afterData['analysis']['special_cases']['issues'] ?? []),
-                    'resolved' => count($beforeData['analysis']['special_cases']['issues'] ?? []) - count($afterData['analysis']['special_cases']['issues'] ?? [])
-                ]
+                    'before' => \count($beforeData['analysis']['special_cases']['issues'] ?? []),
+                    'after' => \count($afterData['analysis']['special_cases']['issues'] ?? []),
+                    'resolved' => \count($beforeData['analysis']['special_cases']['issues'] ?? []) - \count($afterData['analysis']['special_cases']['issues'] ?? []),
+                ],
             ],
             'remaining_issues' => $afterData['analysis'] ?? [],
-            'recommendations' => $this->generatePostMigrationRecommendations($afterData)
+            'recommendations' => $this->generatePostMigrationRecommendations($afterData),
         ];
 
         $html = $this->generateComparisonHTML($comparison);
+
         return File::put($outputPath, $html) !== false;
     }
 
@@ -158,7 +164,7 @@ class MigrationReporter
                 <tbody>";
 
         foreach ($comparison['issues_resolved'] as $type => $data) {
-            $typeName = match($type) {
+            $typeName = match ($type) {
                 'deprecated_classes' => 'Classes obsolètes',
                 'cdn_links' => 'Liens CDN',
                 'special_cases' => 'Cas spéciaux',
@@ -173,7 +179,7 @@ class MigrationReporter
             </tr>";
         }
 
-        $html .= "</tbody></table></div></div></body></html>";
+        $html .= '</tbody></table></div></div></body></html>';
 
         return $html;
     }
@@ -183,25 +189,25 @@ class MigrationReporter
         $recommendations = [];
 
         // Recommandations basées sur les problèmes restants
-        if (!empty($afterData['analysis']['deprecated_classes']['classes'])) {
-            $recommendations[] = "Il reste des classes obsolètes à traiter manuellement";
+        if (! empty($afterData['analysis']['deprecated_classes']['classes'])) {
+            $recommendations[] = 'Il reste des classes obsolètes à traiter manuellement';
         }
 
-        if (!empty($afterData['analysis']['special_cases']['issues'])) {
-            $recommendations[] = "Attention aux cas spéciaux qui nécessitent une intervention manuelle";
+        if (! empty($afterData['analysis']['special_cases']['issues'])) {
+            $recommendations[] = 'Attention aux cas spéciaux qui nécessitent une intervention manuelle';
         }
 
         if ($afterData['validation']['score'] < 90) {
-            $recommendations[] = "Score de migration inférieur à 90% - révision recommandée";
+            $recommendations[] = 'Score de migration inférieur à 90% - révision recommandée';
         }
 
         // Recommandations générales post-migration
         $recommendations = array_merge($recommendations, [
-            "Effectuer des tests complets sur tous les navigateurs supportés",
-            "Vérifier les performances après migration",
-            "Mettre à jour la documentation du projet",
+            'Effectuer des tests complets sur tous les navigateurs supportés',
+            'Vérifier les performances après migration',
+            'Mettre à jour la documentation du projet',
             "Former l'équipe aux nouveautés Bootstrap 5",
-            "Planifier une revue de code pour valider les changements"
+            'Planifier une revue de code pour valider les changements',
         ]);
 
         return $recommendations;
@@ -266,14 +272,14 @@ exit 0
                 'new_classes' => array_values($this->getDeprecatedClassesList()),
                 'data_attributes' => [
                     'old' => ['data-toggle', 'data-target', 'data-dismiss', 'data-slide', 'data-ride'],
-                    'new' => ['data-bs-toggle', 'data-bs-target', 'data-bs-dismiss', 'data-bs-slide', 'data-bs-ride']
+                    'new' => ['data-bs-toggle', 'data-bs-target', 'data-bs-dismiss', 'data-bs-slide', 'data-bs-ride'],
                 ],
                 'inspection_rules' => [
                     'warn_on_deprecated_classes' => true,
                     'warn_on_old_data_attributes' => true,
-                    'suggest_replacements' => true
-                ]
-            ]
+                    'suggest_replacements' => true,
+                ],
+            ],
         ];
 
         return File::put($outputPath, json_encode($config, JSON_PRETTY_PRINT)) !== false;
@@ -295,7 +301,7 @@ exit 0
             'badge-primary' => 'bg-primary', 'badge-secondary' => 'bg-secondary',
             'badge-success' => 'bg-success', 'badge-danger' => 'bg-danger',
             'badge-warning' => 'bg-warning text-dark', 'badge-info' => 'bg-info text-dark',
-            'badge-light' => 'bg-light text-dark', 'badge-dark' => 'bg-dark'
+            'badge-light' => 'bg-light text-dark', 'badge-dark' => 'bg-dark',
         ];
     }
 
@@ -309,7 +315,7 @@ exit 0
             'files_processed' => $migrationData['files_processed'] ?? 0,
             'changes_made' => $migrationData['total_changes'] ?? 0,
             'success_rate' => $migrationData['success_rate'] ?? 0,
-            'memory_usage' => $migrationData['memory_peak'] ?? 0
+            'memory_usage' => $migrationData['memory_peak'] ?? 0,
         ];
 
         $html = "<!DOCTYPE html>
@@ -330,7 +336,7 @@ exit 0
     <div class='metrics-container'>";
 
         foreach ($performanceMetrics as $key => $value) {
-            $label = match($key) {
+            $label = match ($key) {
                 'migration_time' => 'Temps d\'exécution (s)',
                 'files_processed' => 'Fichiers traités',
                 'changes_made' => 'Modifications effectuées',
@@ -348,7 +354,7 @@ exit 0
             </div>";
         }
 
-        $html .= "</div></body></html>";
+        $html .= '</div></body></html>';
 
         return File::put($outputPath, $html) !== false;
     }
@@ -360,7 +366,7 @@ exit 0
     {
         $rollbackDir = storage_path("app/bootstrap-migration-rollback/{$identifier}");
 
-        if (!File::exists($rollbackDir)) {
+        if (! File::exists($rollbackDir)) {
             File::makeDirectory($rollbackDir, 0755, true);
         }
 
@@ -377,13 +383,13 @@ exit 0
         try {
             foreach ($criticalPaths as $path) {
                 if (File::exists($path)) {
-                    $relativePath = str_replace(base_path() . '/', '', $path);
-                    $backupPath = $rollbackDir . '/' . $relativePath;
+                    $relativePath = str_replace(base_path().'/', '', $path);
+                    $backupPath = $rollbackDir.'/'.$relativePath;
 
                     if (File::isDirectory($path)) {
                         File::copyDirectory($path, $backupPath);
                     } else {
-                        File::ensureDirectoryExists(dirname($backupPath));
+                        File::ensureDirectoryExists(\dirname($backupPath));
                         File::copy($path, $backupPath);
                     }
                 }
@@ -395,10 +401,10 @@ exit 0
                 'identifier' => $identifier,
                 'laravel_version' => app()->version(),
                 'php_version' => PHP_VERSION,
-                'backed_up_paths' => $criticalPaths
+                'backed_up_paths' => $criticalPaths,
             ];
 
-            File::put($rollbackDir . '/metadata.json', json_encode($metadata, JSON_PRETTY_PRINT));
+            File::put($rollbackDir.'/metadata.json', json_encode($metadata, JSON_PRETTY_PRINT));
 
             return true;
         } catch (\Exception $e) {
@@ -414,14 +420,14 @@ exit 0
         $rollbackDir = storage_path('app/bootstrap-migration-rollback');
         $points = [];
 
-        if (!File::exists($rollbackDir)) {
+        if (! File::exists($rollbackDir)) {
             return $points;
         }
 
         $directories = File::directories($rollbackDir);
 
         foreach ($directories as $dir) {
-            $metadataPath = $dir . '/metadata.json';
+            $metadataPath = $dir.'/metadata.json';
 
             if (File::exists($metadataPath)) {
                 $metadata = json_decode(File::get($metadataPath), true);
@@ -429,7 +435,7 @@ exit 0
                     'identifier' => basename($dir),
                     'created_at' => $metadata['created_at'] ?? 'Unknown',
                     'size' => $this->getDirectorySize($dir),
-                    'path' => $dir
+                    'path' => $dir,
                 ];
             }
         }
@@ -455,11 +461,11 @@ exit 0
         $units = ['B', 'KB', 'MB', 'GB'];
         $bytes = max($bytes, 0);
         $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
-        $pow = min($pow, count($units) - 1);
+        $pow = min($pow, \count($units) - 1);
 
         $bytes /= pow(1024, $pow);
 
-        return round($bytes, 2) . ' ' . $units[$pow];
+        return round($bytes, 2).' '.$units[$pow];
     }
 
     public function generateHTMLReport(array $data): string
@@ -848,19 +854,19 @@ exit 0
         $markdown .= "## 📈 Statistiques\n\n";
         $markdown .= "| Métrique | Valeur | Statut |\n";
         $markdown .= "|----------|--------|--------|\n";
-        $markdown .= "| Bootstrap Version | {$data['analysis']['general']['bootstrap_version']} | " .
-                    ($data['analysis']['general']['bootstrap_version'] === '4.6.x' ? '🔄 Migration requise' : '✅ OK') . " |\n";
-        $markdown .= "| jQuery Usage | " . ($data['analysis']['general']['jquery_usage'] ? 'Détecté' : 'Non détecté') . " | " .
-                    ($data['analysis']['general']['jquery_usage'] ? '⚠️ À vérifier' : '✅ OK') . " |\n";
-        $markdown .= "| Classes obsolètes | " . count($data['analysis']['deprecated_classes']['classes']) . " | " .
-                    (count($data['analysis']['deprecated_classes']['classes']) > 0 ? '🔄 À remplacer' : '✅ OK') . " |\n";
-        $markdown .= "| Liens CDN | " . count($data['analysis']['cdn_links']) . " | " .
-                    (count($data['analysis']['cdn_links']) > 0 ? '🔄 À mettre à jour' : '✅ OK') . " |\n";
-        $markdown .= "| Cas spéciaux | " . count($data['analysis']['special_cases']['issues']) . " | " .
-                    (count($data['analysis']['special_cases']['issues']) > 0 ? '⚠️ Attention manuelle' : '✅ OK') . " |\n\n";
+        $markdown .= "| Bootstrap Version | {$data['analysis']['general']['bootstrap_version']} | ".
+                    ($data['analysis']['general']['bootstrap_version'] === '4.6.x' ? '🔄 Migration requise' : '✅ OK')." |\n";
+        $markdown .= '| jQuery Usage | '.($data['analysis']['general']['jquery_usage'] ? 'Détecté' : 'Non détecté').' | '.
+                    ($data['analysis']['general']['jquery_usage'] ? '⚠️ À vérifier' : '✅ OK')." |\n";
+        $markdown .= '| Classes obsolètes | '.\count($data['analysis']['deprecated_classes']['classes']).' | '.
+                    (\count($data['analysis']['deprecated_classes']['classes']) > 0 ? '🔄 À remplacer' : '✅ OK')." |\n";
+        $markdown .= '| Liens CDN | '.\count($data['analysis']['cdn_links']).' | '.
+                    (\count($data['analysis']['cdn_links']) > 0 ? '🔄 À mettre à jour' : '✅ OK')." |\n";
+        $markdown .= '| Cas spéciaux | '.\count($data['analysis']['special_cases']['issues']).' | '.
+                    (\count($data['analysis']['special_cases']['issues']) > 0 ? '⚠️ Attention manuelle' : '✅ OK')." |\n\n";
 
         // Classes obsolètes détaillées
-        if (!empty($data['analysis']['deprecated_classes']['classes'])) {
+        if (! empty($data['analysis']['deprecated_classes']['classes'])) {
             $markdown .= "## 🔄 Classes Obsolètes Détectées\n\n";
             $markdown .= "| Classe | Remplacement | Occurrences | Sévérité |\n";
             $markdown .= "|--------|--------------|-------------|----------|\n";
@@ -874,7 +880,7 @@ exit 0
         }
 
         // Cas spéciaux
-        if (!empty($data['analysis']['special_cases']['issues'])) {
+        if (! empty($data['analysis']['special_cases']['issues'])) {
             $markdown .= "## ⚠️ Cas Spéciaux Nécessitant une Attention Manuelle\n\n";
 
             foreach ($data['analysis']['special_cases']['issues'] as $issue) {
@@ -884,8 +890,9 @@ exit 0
                 $markdown .= "**Solution :** {$issue['solution']}\n\n";
                 $markdown .= "**Fichier :** `{$issue['file']}`\n\n";
 
-                if (!empty($issue['examples'])) {
+                if (! empty($issue['examples'])) {
                     $markdown .= "**Exemples trouvés :**\n";
+
                     foreach ($issue['examples'] as $example) {
                         $markdown .= "- `{$example}`\n";
                     }
@@ -896,6 +903,7 @@ exit 0
 
         // Checklist de migration
         $markdown .= "## ✅ Checklist de Migration\n\n";
+
         foreach ($data['migration_checklist'] as $item) {
             $status = $item['completed'] ? '✅' : '⬜';
             $markdown .= "- {$status} **{$item['title']}**\n";
@@ -904,6 +912,7 @@ exit 0
 
         // Recommandations
         $markdown .= "## 💡 Recommandations\n\n";
+
         foreach ($data['recommendations'] as $recommendation) {
             $markdown .= "- {$recommendation}\n";
         }
@@ -966,25 +975,25 @@ exit 0
     {
         $stats = [
             [
-                'number' => count($analysis['deprecated_classes']['classes']),
+                'number' => \count($analysis['deprecated_classes']['classes']),
                 'label' => 'Classes obsolètes',
-                'color' => count($analysis['deprecated_classes']['classes']) > 0 ? 'danger' : 'success'
+                'color' => \count($analysis['deprecated_classes']['classes']) > 0 ? 'danger' : 'success',
             ],
             [
-                'number' => count($analysis['cdn_links']),
+                'number' => \count($analysis['cdn_links']),
                 'label' => 'Liens CDN à mettre à jour',
-                'color' => count($analysis['cdn_links']) > 0 ? 'warning' : 'success'
+                'color' => \count($analysis['cdn_links']) > 0 ? 'warning' : 'success',
             ],
             [
-                'number' => count($analysis['special_cases']['issues']),
+                'number' => \count($analysis['special_cases']['issues']),
                 'label' => 'Cas spéciaux',
-                'color' => count($analysis['special_cases']['issues']) > 0 ? 'danger' : 'success'
+                'color' => \count($analysis['special_cases']['issues']) > 0 ? 'danger' : 'success',
             ],
             [
                 'number' => $analysis['file_stats']['total_files'],
                 'label' => 'Fichiers analysés',
-                'color' => 'info'
-            ]
+                'color' => 'info',
+            ],
         ];
 
         $html = "<div class='section'><h2>📈 Statistiques de l'Analyse</h2><div class='stats-grid'>";
@@ -997,7 +1006,8 @@ exit 0
             </div>";
         }
 
-        $html .= "</div></div>";
+        $html .= '</div></div>';
+
         return $html;
     }
 
@@ -1022,26 +1032,26 @@ exit 0
                 'element' => 'Bootstrap Version',
                 'status' => $analysis['general']['bootstrap_version'],
                 'details' => $this->getVersionStatus($analysis['general']['bootstrap_version']),
-                'action' => str_contains($analysis['general']['bootstrap_version'], '4.') ? 'Migration requise' : 'OK'
+                'action' => str_contains($analysis['general']['bootstrap_version'], '4.') ? 'Migration requise' : 'OK',
             ],
             [
                 'element' => 'jQuery Usage',
                 'status' => $analysis['general']['jquery_usage'] ? 'Détecté' : 'Non détecté',
                 'details' => $analysis['general']['jquery_usage'] ? 'Vérifier la compatibilité' : 'Aucune dépendance',
-                'action' => $analysis['general']['jquery_usage'] ? 'Évaluer la nécessité' : 'OK'
+                'action' => $analysis['general']['jquery_usage'] ? 'Évaluer la nécessité' : 'OK',
             ],
             [
                 'element' => 'Classes obsolètes',
-                'status' => count($analysis['deprecated_classes']['classes']) . ' trouvées',
+                'status' => \count($analysis['deprecated_classes']['classes']).' trouvées',
                 'details' => $this->getSeverityBreakdown($analysis['deprecated_classes']['classes']),
-                'action' => count($analysis['deprecated_classes']['classes']) > 0 ? 'Remplacement automatique' : 'OK'
+                'action' => \count($analysis['deprecated_classes']['classes']) > 0 ? 'Remplacement automatique' : 'OK',
             ],
             [
                 'element' => 'Liens CDN',
-                'status' => count($analysis['cdn_links']) . ' obsolètes',
-                'details' => count($analysis['cdn_links']) > 0 ? 'Bootstrap 4 détecté' : 'À jour',
-                'action' => count($analysis['cdn_links']) > 0 ? 'Mise à jour requise' : 'OK'
-            ]
+                'status' => \count($analysis['cdn_links']).' obsolètes',
+                'details' => \count($analysis['cdn_links']) > 0 ? 'Bootstrap 4 détecté' : 'À jour',
+                'action' => \count($analysis['cdn_links']) > 0 ? 'Mise à jour requise' : 'OK',
+            ],
         ];
 
         foreach ($items as $item) {
@@ -1054,7 +1064,8 @@ exit 0
             </tr>";
         }
 
-        $html .= "</tbody></table></div>";
+        $html .= '</tbody></table></div>';
+
         return $html;
     }
 
@@ -1063,7 +1074,7 @@ exit 0
         $html = "<div class='section'><h2>⚠️ Problèmes Détectés</h2>";
 
         // Classes obsolètes
-        if (!empty($analysis['deprecated_classes']['classes'])) {
+        if (! empty($analysis['deprecated_classes']['classes'])) {
             $html .= "<h3>🔄 Classes CSS Obsolètes</h3><div class='grid grid-2'>";
 
             foreach ($analysis['deprecated_classes']['classes'] as $class => $details) {
@@ -1081,12 +1092,12 @@ exit 0
                 </div>";
             }
 
-            $html .= "</div>";
+            $html .= '</div>';
         }
 
         // Cas spéciaux
-        if (!empty($analysis['special_cases']['issues'])) {
-            $html .= "<h3>🔧 Cas Spéciaux</h3>";
+        if (! empty($analysis['special_cases']['issues'])) {
+            $html .= '<h3>🔧 Cas Spéciaux</h3>';
 
             foreach ($analysis['special_cases']['issues'] as $issue) {
                 $cardClass = $this->getSeverityCardClass($issue['severity']);
@@ -1102,19 +1113,21 @@ exit 0
                     <p><strong>Fichier :</strong> <code>{$issue['file']}</code></p>
                     <p><strong>Occurrences :</strong> {$issue['matches']}</p>";
 
-                if (!empty($issue['examples'])) {
+                if (! empty($issue['examples'])) {
                     $html .= "<p><strong>Exemples :</strong></p><div class='code-block'>";
-                    foreach (array_slice($issue['examples'], 0, 3) as $example) {
+
+                    foreach (\array_slice($issue['examples'], 0, 3) as $example) {
                         $html .= "<code>{$example}</code><br>";
                     }
-                    $html .= "</div>";
+                    $html .= '</div>';
                 }
 
-                $html .= "</div>";
+                $html .= '</div>';
             }
         }
 
-        $html .= "</div>";
+        $html .= '</div>';
+
         return $html;
     }
 
@@ -1123,9 +1136,9 @@ exit 0
         $html = "<div class='section'><h2>✅ Validation de la Migration</h2>";
 
         // Problèmes critiques
-        if (!empty($validation['critical_issues'])) {
-            $html .= "<h3>🚨 Problèmes Critiques</h3>";
-            $html .= "<p>Ces problèmes doivent être résolus immédiatement :</p>";
+        if (! empty($validation['critical_issues'])) {
+            $html .= '<h3>🚨 Problèmes Critiques</h3>';
+            $html .= '<p>Ces problèmes doivent être résolus immédiatement :</p>';
 
             foreach ($validation['critical_issues'] as $issue) {
                 $html .= "
@@ -1137,9 +1150,9 @@ exit 0
         }
 
         // Avertissements
-        if (!empty($validation['warnings'])) {
-            $html .= "<h3>⚠️ Avertissements</h3>";
-            $html .= "<p>Ces éléments nécessitent votre attention :</p>";
+        if (! empty($validation['warnings'])) {
+            $html .= '<h3>⚠️ Avertissements</h3>';
+            $html .= '<p>Ces éléments nécessitent votre attention :</p>';
 
             foreach ($validation['warnings'] as $warning) {
                 $html .= "
@@ -1151,13 +1164,14 @@ exit 0
         }
 
         // Problèmes corrigeables automatiquement
-        if (!empty($validation['fixable_issues'])) {
-            $html .= "<h3>🔧 Problèmes Corrigeables Automatiquement</h3>";
-            $html .= "<p>Ces problèmes peuvent être corrigés automatiquement avec la commande :</p>";
+        if (! empty($validation['fixable_issues'])) {
+            $html .= '<h3>🔧 Problèmes Corrigeables Automatiquement</h3>';
+            $html .= '<p>Ces problèmes peuvent être corrigés automatiquement avec la commande :</p>';
             $html .= "<div class='code-block'>php artisan bootstrap:validate --fix</div>";
 
             // Grouper par type d'action
             $groupedIssues = [];
+
             foreach ($validation['fixable_issues'] as $issue) {
                 $action = $issue['action'] ?? 'unknown';
                 $groupedIssues[$action][] = $issue;
@@ -1165,9 +1179,9 @@ exit 0
 
             foreach ($groupedIssues as $action => $issues) {
                 $actionName = $this->getActionDisplayName($action);
-                $html .= "<h4>{$actionName} (" . count($issues) . " problèmes)</h4>";
+                $html .= "<h4>{$actionName} (".\count($issues).' problèmes)</h4>';
 
-                foreach (array_slice($issues, 0, 5) as $issue) {
+                foreach (\array_slice($issues, 0, 5) as $issue) {
                     $html .= "
                     <div class='issue info'>
                         <strong>{$issue['description']}</strong>
@@ -1175,15 +1189,15 @@ exit 0
                     </div>";
                 }
 
-                if (count($issues) > 5) {
-                    $remaining = count($issues) - 5;
+                if (\count($issues) > 5) {
+                    $remaining = \count($issues) - 5;
                     $html .= "<p><em>... et {$remaining} autres problèmes similaires</em></p>";
                 }
             }
         }
 
         // Statut par catégorie
-        $html .= "<h3>📊 Statut par Catégorie</h3>";
+        $html .= '<h3>📊 Statut par Catégorie</h3>';
         $html .= "<table class='table'>
             <thead>
                 <tr>
@@ -1216,43 +1230,44 @@ exit 0
             </tr>";
         }
 
-        $html .= "</tbody></table>";
+        $html .= '</tbody></table>';
 
         // Recommandations spécifiques à la validation
-        if (!empty($validation['recommendations'])) {
-            $html .= "<h3>💡 Recommandations de Validation</h3>";
-            $html .= "<ul>";
+        if (! empty($validation['recommendations'])) {
+            $html .= '<h3>💡 Recommandations de Validation</h3>';
+            $html .= '<ul>';
+
             foreach ($validation['recommendations'] as $recommendation) {
                 $html .= "<li>{$recommendation}</li>";
             }
-            $html .= "</ul>";
+            $html .= '</ul>';
         }
 
         // Commandes utiles
-        $html .= "<h3>🛠️ Commandes Utiles</h3>";
+        $html .= '<h3>🛠️ Commandes Utiles</h3>';
         $html .= "<div class='grid grid-2'>";
 
         $commands = [
             [
                 'title' => 'Validation complète',
                 'command' => 'php artisan bootstrap:validate',
-                'description' => 'Effectue une validation complète sans modifications'
+                'description' => 'Effectue une validation complète sans modifications',
             ],
             [
                 'title' => 'Correction automatique',
                 'command' => 'php artisan bootstrap:validate --fix',
-                'description' => 'Corrige automatiquement les problèmes mineurs'
+                'description' => 'Corrige automatiquement les problèmes mineurs',
             ],
             [
                 'title' => 'Mode strict',
                 'command' => 'php artisan bootstrap:validate --strict',
-                'description' => 'Échoue si des problèmes critiques sont détectés'
+                'description' => 'Échoue si des problèmes critiques sont détectés',
             ],
             [
                 'title' => 'Analyse détaillée',
                 'command' => 'php artisan bootstrap:analyze --detailed',
-                'description' => 'Analyse approfondie avec localisation des problèmes'
-            ]
+                'description' => 'Analyse approfondie avec localisation des problèmes',
+            ],
         ];
 
         foreach ($commands as $cmd) {
@@ -1264,21 +1279,22 @@ exit 0
             </div>";
         }
 
-        $html .= "</div>";
+        $html .= '</div>';
 
-        $html .= "</div>";
+        $html .= '</div>';
+
         return $html;
     }
 
     private function getActionDisplayName(string $action): string
     {
-        return match($action) {
+        return match ($action) {
             'update_bootstrap_version' => '🔄 Mise à jour version Bootstrap',
             'replace_popper' => '🔄 Remplacement Popper.js',
             'replace_class' => '🎨 Remplacement classes CSS',
             'update_data_attribute' => '🏷️ Mise à jour attributs data-*',
             'update_cdn_link' => '🔗 Mise à jour liens CDN',
-            default => '🔧 ' . ucfirst(str_replace('_', ' ', $action))
+            default => '🔧 '.ucfirst(str_replace('_', ' ', $action))
         };
     }
 

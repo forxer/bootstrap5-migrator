@@ -27,9 +27,11 @@ class GenerateReportCommand extends Command
             case 'pdf':
                 $this->generatePDFReport($reporter, $reportData, $outputPath);
                 break;
+
             case 'markdown':
                 $this->generateMarkdownReport($reporter, $reportData, $outputPath);
                 break;
+
             default:
                 $this->generateHTMLReport($reporter, $reportData, $outputPath);
         }

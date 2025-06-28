@@ -50,9 +50,11 @@ class AnalyzeBootstrap4Command extends Command
             case 'json':
                 $this->line(json_encode($analysis, JSON_PRETTY_PRINT));
                 break;
+
             case 'html':
                 $this->generateHTMLReport($analysis);
                 break;
+
             default:
                 $this->displayTableFormat($analysis);
         }
@@ -65,48 +67,52 @@ class AnalyzeBootstrap4Command extends Command
         $this->table(['Élément', 'Statut', 'Détails'], [
             ['Bootstrap Version', $analysis['general']['bootstrap_version'], $this->getVersionStatus($analysis['general']['bootstrap_version'])],
             ['jQuery Usage', $analysis['general']['jquery_usage'] ? 'Détecté' : 'Non détecté', $analysis['general']['jquery_usage'] ? '⚠️ À vérifier' : '✅ OK'],
-            ['Classes obsolètes', count($analysis['deprecated_classes']['classes']), count($analysis['deprecated_classes']['classes']) . ' trouvées'],
-            ['Liens CDN', count($analysis['cdn_links']), count($analysis['cdn_links']) . ' à mettre à jour'],
-            ['Cas spéciaux', count($analysis['special_cases']['issues']), count($analysis['special_cases']['issues']) . ' problèmes détectés'],
+            ['Classes obsolètes', \count($analysis['deprecated_classes']['classes']), \count($analysis['deprecated_classes']['classes']).' trouvées'],
+            ['Liens CDN', \count($analysis['cdn_links']), \count($analysis['cdn_links']).' à mettre à jour'],
+            ['Cas spéciaux', \count($analysis['special_cases']['issues']), \count($analysis['special_cases']['issues']).' problèmes détectés'],
         ]);
 
         // Classes obsolètes détaillées
-        if (!empty($analysis['deprecated_classes']['classes'])) {
+        if (! empty($analysis['deprecated_classes']['classes'])) {
             $this->warn('📝 Classes obsolètes trouvées :');
             $classData = [];
+
             foreach ($analysis['deprecated_classes']['classes'] as $class => $details) {
                 $classData[] = [
                     $class,
                     $details['replacement'] ?? 'Supprimée',
                     $details['count'] ?? 0,
-                    $this->option('detailed') ? implode(', ', array_slice($details['files'] ?? [], 0, 3)) : 'Multiple fichiers'
+                    $this->option('detailed') ? implode(', ', \array_slice($details['files'] ?? [], 0, 3)) : 'Multiple fichiers',
                 ];
             }
             $this->table(['Classe', 'Remplacement', 'Occurrences', 'Fichiers'], $classData);
         }
 
         // CDN Links
-        if (!empty($analysis['cdn_links'])) {
+        if (! empty($analysis['cdn_links'])) {
             $this->warn('🔗 Liens CDN Bootstrap 4 détectés :');
             $cdnData = [];
+
             foreach ($analysis['cdn_links'] as $link) {
                 $cdnData[] = [
                     $link['file'],
                     $link['current_version'],
                     $link['provider'],
-                    $link['suggested_v5_link']
+                    $link['suggested_v5_link'],
                 ];
             }
             $this->table(['Fichier', 'Version actuelle', 'CDN', 'Lien Bootstrap 5 suggéré'], $cdnData);
         }
 
         // Cas spéciaux
-        if (!empty($analysis['special_cases']['issues'])) {
+        if (! empty($analysis['special_cases']['issues'])) {
             $this->error('⚠️ Cas spéciaux nécessitant une attention manuelle :');
+
             foreach ($analysis['special_cases']['issues'] as $issue) {
                 $this->line("• {$issue['type']}: {$issue['description']}");
-                if (!empty($issue['files'])) {
-                    $this->line("  Fichiers affectés: " . implode(', ', array_slice($issue['files'], 0, 3)));
+
+                if (! empty($issue['files'])) {
+                    $this->line('  Fichiers affectés: '.implode(', ', \array_slice($issue['files'], 0, 3)));
                 }
             }
         }
@@ -130,6 +136,7 @@ class AnalyzeBootstrap4Command extends Command
         } elseif (str_contains($version, '^5.') || str_contains($version, '5.')) {
             return '✅ Déjà Bootstrap 5';
         }
+
         return '❓ Version inconnue';
     }
 
@@ -140,6 +147,7 @@ class AnalyzeBootstrap4Command extends Command
 
         foreach ($supportedExtensions as $ext) {
             $count = $this->countFilesByExtension($ext);
+
             if ($count > 0) {
                 $foundFiles[$ext] = $count;
             }
@@ -160,6 +168,7 @@ class AnalyzeBootstrap4Command extends Command
         ];
 
         $count = 0;
+
         foreach ($paths as $path) {
             if (is_dir($path)) {
                 $iterator = new \RecursiveIteratorIterator(
@@ -185,9 +194,11 @@ class AnalyzeBootstrap4Command extends Command
             case 'json':
                 file_put_contents($filePath, json_encode($analysis, JSON_PRETTY_PRINT));
                 break;
+
             case 'csv':
                 $this->exportToCSV($analysis, $filePath);
                 break;
+
             default:
                 file_put_contents($filePath, print_r($analysis, true));
         }
@@ -209,7 +220,7 @@ class AnalyzeBootstrap4Command extends Command
                 $class,
                 'À remplacer',
                 $details['replacement'] ?? 'Supprimée',
-                implode(';', $details['files'] ?? [])
+                implode(';', $details['files'] ?? []),
             ]);
         }
 
@@ -220,7 +231,7 @@ class AnalyzeBootstrap4Command extends Command
                 $link['current_version'],
                 'À mettre à jour',
                 $link['suggested_v5_link'],
-                $link['file']
+                $link['file'],
             ]);
         }
 

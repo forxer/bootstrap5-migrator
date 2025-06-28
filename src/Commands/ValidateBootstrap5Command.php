@@ -21,12 +21,13 @@ class ValidateBootstrap5Command extends Command
 
         $this->displayValidationResults($results);
 
-        if ($this->option('fix') && !empty($results['fixable_issues'])) {
+        if ($this->option('fix') && ! empty($results['fixable_issues'])) {
             $this->fixIssues($validator, $results['fixable_issues']);
         }
 
         if ($this->option('strict') && $results['has_critical_issues']) {
             $this->error('❌ Validation échouée en mode strict');
+
             return 1;
         }
 
@@ -43,24 +44,27 @@ class ValidateBootstrap5Command extends Command
         $this->$scoreColor("📊 Score de migration : {$score}/100");
 
         // Problèmes critiques
-        if (!empty($results['critical_issues'])) {
+        if (! empty($results['critical_issues'])) {
             $this->error('🚨 Problèmes critiques :');
+
             foreach ($results['critical_issues'] as $issue) {
                 $this->line("  • {$issue['description']} ({$issue['file']})");
             }
         }
 
         // Avertissements
-        if (!empty($results['warnings'])) {
+        if (! empty($results['warnings'])) {
             $this->warn('⚠️ Avertissements :');
+
             foreach ($results['warnings'] as $warning) {
                 $this->line("  • {$warning['description']} ({$warning['file']})");
             }
         }
 
         // Recommandations
-        if (!empty($results['recommendations'])) {
+        if (! empty($results['recommendations'])) {
             $this->info('💡 Recommandations :');
+
             foreach ($results['recommendations'] as $recommendation) {
                 $this->line("  • {$recommendation}");
             }
@@ -82,6 +86,7 @@ class ValidateBootstrap5Command extends Command
         $this->info('🔧 Correction automatique des problèmes mineurs...');
 
         $fixed = 0;
+
         foreach ($fixableIssues as $issue) {
             if ($validator->fixIssue($issue)) {
                 $this->line("  ✅ Corrigé : {$issue['description']}");
