@@ -2,7 +2,10 @@
 
 namespace Bootstrap5Migrator;
 
+use Bootstrap5Migrator\Commands\AnalyzeBootstrap4Command;
+use Bootstrap5Migrator\Commands\GenerateReportCommand;
 use Bootstrap5Migrator\Commands\MigrateToBootstrap5Command;
+use Bootstrap5Migrator\Commands\ValidateBootstrap5Command;
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
 
 class ServiceProvider extends BaseServiceProvider
@@ -12,6 +15,9 @@ class ServiceProvider extends BaseServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 MigrateToBootstrap5Command::class,
+                AnalyzeBootstrap4Command::class,
+                ValidateBootstrap5Command::class,
+                GenerateReportCommand::class,
             ]);
         }
 
