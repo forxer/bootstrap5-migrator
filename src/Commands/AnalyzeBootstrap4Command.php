@@ -55,6 +55,21 @@ class AnalyzeBootstrap4Command extends Command
         };
     }
 
+    private function generateHTMLReport(array $analysis): void
+    {
+        // Utiliser la vue Blade pour générer le HTML
+        $html = view('bootstrap5-migrator::analysis-report', ['analysis' => $analysis])->render();
+
+        if ($this->option('export')) {
+            $outputPath = $this->option('export');
+            file_put_contents($outputPath, $html);
+            $this->info('📄 Rapport HTML généré : '.$outputPath);
+        } else {
+            // Si pas d'export, afficher un résumé dans la console
+            $this->displayTableFormat($analysis);
+        }
+    }
+
     private function displayTableFormat(array $analysis): void
     {
         // Résumé général
@@ -113,17 +128,6 @@ class AnalyzeBootstrap4Command extends Command
                 }
             }
         }
-    }
-
-    private function generateHTMLReport(array $analysis): void
-    {
-        $reportPath = storage_path('app/bootstrap-analysis-report.html');
-
-        $html = view('bootstrap5-migrator::analysis-report', ['analysis' => $analysis])->render();
-
-        file_put_contents($reportPath, $html);
-
-        $this->info('📄 Rapport HTML généré : '.$reportPath);
     }
 
     private function getVersionStatus(string $version): string
@@ -191,7 +195,11 @@ class AnalyzeBootstrap4Command extends Command
 
         match ($format) {
             'json' => file_put_contents($filePath, json_encode($analysis, JSON_PRETTY_PRINT)),
+            'html' => file_put_contents($filePath,
+                view('bootstrap5-migrator::analysis-report', ['analysis' => $analysis])->render()
+            ),
             'csv' => $this->exportToCSV($analysis, $filePath),
+            // Pour les autres extensions, utiliser print_r
             default => file_put_contents($filePath, print_r($analysis, true)),
         };
 
