@@ -34,6 +34,15 @@ composer require forxer/bootstrap5-migrator --dev
 php artisan vendor:publish --tag="bootstrap5-migrator-config"
 ```
 
+### Publication des vues pour customisation
+
+```bash
+php artisan vendor:publish --tag=bootstrap5-migrator-views
+```
+
+Les vues seront copiées dans : `resources/views/vendor/bootstrap5-migrator/`
+
+
 🚀 Utilisation rapide
 ---------------------
 

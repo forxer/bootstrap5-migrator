@@ -21,6 +21,8 @@ class ServiceProvider extends BaseServiceProvider
 
     public function boot(): void
     {
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'bootstrap5-migrator');
+
         if ($this->app->runningInConsole()) {
             $this->commands([
                 MigrateToBootstrap5Command::class,
@@ -28,10 +30,21 @@ class ServiceProvider extends BaseServiceProvider
                 ValidateBootstrap5Command::class,
                 GenerateReportCommand::class,
             ]);
-        }
 
+            $this->configurePublishing();
+        }
+    }
+
+    private function configurePublishing(): void
+    {
+        // config
         $this->publishes([
             __DIR__.'/../config/bootstrap5-migrator.php' => config_path('bootstrap5-migrator.php'),
         ], 'bootstrap5-migrator-config');
+
+        // views
+        $this->publishes([
+            __DIR__.'/../resources/views' => resource_path('views/vendor/bootstrap5-migrator'),
+        ], 'bootstrap5-migrator-views');
     }
 }
