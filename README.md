@@ -37,6 +37,25 @@ php artisan vendor:publish --tag=bootstrap5-migrator-views
 
 Les vues seront copiées dans : `resources/views/vendor/bootstrap5-migrator/`
 
+### Customisation des rapports
+
+Les vues utilisent le moteur Blade et peuvent être entièrement personnalisées :
+
+```php
+// Après publication des vues, modifiez selon vos besoins :
+// resources/views/vendor/bootstrap5-migrator/layout.blade.php - Layout principal
+// resources/views/vendor/bootstrap5-migrator/report.blade.php - Rapport de migration
+// resources/views/vendor/bootstrap5-migrator/comparison.blade.php - Rapport de comparaison
+// resources/views/vendor/bootstrap5-migrator/performance.blade.php - Rapport de performance
+```
+
+**Composants disponibles :**
+- `score-section` - Section de scoring avec barre de progression
+- `stats-section` - Statistiques avec cartes
+- `issues-section` - Problèmes détectés avec badges de sévérité
+- `validation-section` - Résultats de validation
+- `checklist-section` - Checklist interactive
+- `recommendations-section` - Recommandations personnalisées
 
 🚀 Utilisation rapide
 ---------------------
@@ -80,6 +99,7 @@ php artisan bootstrap:analyze --export=analysis.html --format=html
 - `--format=table|json|html` : Format de sortie
 - `--export=fichier` : Exporter vers un fichier
 - `--detailed` : Analyse détaillée avec localisation des problèmes
+- **Note :** Le format HTML génère des rapports interactifs avec interface moderne
 
 ### `bootstrap:migrate-to-5` - Migration principale
 
@@ -145,7 +165,9 @@ php artisan bootstrap:report --include-screenshots
 **Options :**
 - `--format=html|pdf|markdown` : Format du rapport
 - `--output=fichier` : Chemin de sortie
-- `--include-screenshots` : Inclut des captures d'écran
+- `--include-screenshots` : Inclut des captures d'écran (nécessite Puppeteer)
+- `--comparison` : Génère un rapport de comparaison avant/après migration
+- `--performance` : Inclut les métriques de performance détaillées
 
 🔍 Ce que fait l'outil
 ----------------------
@@ -361,6 +383,60 @@ L'outil génère un score de migration sur 100 basé sur :
 - **50-69** : ⚠️ Migration en cours, attention requise
 - **<50** : 🚨 Nombreux problèmes à résoudre
 
+📊 Types de rapports avancés
+---------------------------
+
+### Rapport de comparaison avant/après
+
+Compare les métriques avant et après migration pour mesurer l'amélioration :
+
+```bash
+# 1. Sauvegarde de l'analyse pré-migration
+php artisan bootstrap:analyze --export=before.json
+
+# 2. Après migration, génération du rapport de comparaison
+php artisan bootstrap:report --comparison --before-data=before.json
+```
+
+**Contenu du rapport :**
+- Score d'amélioration avec visualisation
+- Nombre de problèmes résolus par catégorie
+- Problèmes restants nécessitant attention
+- Recommandations post-migration spécifiques
+
+### Rapport de performance
+
+Analyse les performances de la migration elle-même :
+
+```bash
+php artisan bootstrap:report --performance --output=performance.html
+```
+
+**Métriques incluses :**
+- Temps d'exécution total et par étape
+- Utilisation mémoire (pic et moyenne)
+- Nombre de fichiers traités avec succès
+- Taux de réussite par type de fichier
+- Erreurs rencontrées avec détails
+- Suggestions d'optimisation
+
+### Script de surveillance continue
+
+Génère un script bash pour surveiller les régressions après migration :
+
+```bash
+# Génération du script de surveillance
+php artisan bootstrap:report --monitoring-script
+
+# Le script généré vérifie automatiquement :
+# - Classes Bootstrap 4 résiduelles
+# - Attributs data-* non préfixés
+# - Liens CDN obsolètes
+# - Usage jQuery avec plugins Bootstrap
+```
+
+Utilisable dans vos pipelines CI/CD pour s'assurer qu'aucune régression n'est introduite.
+
 🔧 Configuration
 ----------------
 
@@ -397,6 +473,42 @@ Le fichier `config/bootstrap5-migrator.php` permet de personnaliser :
 'jquery' => [
     'remove_automatically' => false,
     'show_warnings' => true,
+],
+```
+
+### Configuration avancée
+
+Le fichier de configuration supporte de nombreuses options avancées :
+
+```php
+// Cas spéciaux personnalisés
+'special_cases' => [
+    'my_custom_pattern' => [
+        'pattern' => '/custom-pattern/',
+        'severity' => 'medium',
+        'description' => 'Description du problème',
+    ],
+],
+
+// Exclusions intelligentes
+'exclude' => [
+    'directories' => ['node_modules', 'vendor', '.git'],
+    'files' => ['*.min.js', '*.min.css'],
+    'patterns' => ['/\/\*.*?\*\//', '/<!--.*?-->/'],
+],
+
+// Système de scoring personnalisé
+'scoring' => [
+    'weights' => [
+        'critical_issues' => -15,
+        'deprecated_classes' => -10,
+        'cdn_links' => -5,
+    ],
+    'thresholds' => [
+        'excellent' => 90,
+        'good' => 70,
+        'needs_attention' => 50,
+    ],
 ],
 ```
 
@@ -607,6 +719,29 @@ php artisan bootstrap:validate --fix
 
 # Analyse des problèmes restants
 php artisan bootstrap:analyze --detailed --export=debug.json
+```
+
+#### Rapport HTML vide ou erreur de vue
+```bash
+# Vérifiez que les vues sont bien publiées
+php artisan vendor:publish --tag=bootstrap5-migrator-views
+
+# Ou nettoyez le cache des vues
+php artisan view:clear
+
+# Générez un rapport avec gestion d'erreur
+php artisan bootstrap:analyze --format=html --export=test.html
+```
+
+#### Problème de permissions sur les sauvegardes
+```bash
+# Vérifiez les permissions du dossier storage
+chmod -R 755 storage/app
+
+# Ou spécifiez un autre répertoire dans la config
+'backup' => [
+    'path' => base_path('backups'), // Chemin personnalisé
+],
 ```
 
 ### Support et communauté
