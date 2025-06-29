@@ -26,11 +26,11 @@ trait UsesPerformanceServices
         }
 
         if ($this->cacheService === null) {
-            $this->cacheService = new CacheService();
+            $this->cacheService = app(CacheService::class);
         }
 
         if ($this->fileProcessorService === null) {
-            $this->fileProcessorService = new FileProcessorService();
+            $this->fileProcessorService = app(FileProcessorService::class);
         }
     }
 
@@ -154,6 +154,54 @@ trait UsesPerformanceServices
             $this->progressService->step($message, $emoji);
         } else {
             $this->info(\sprintf('%s %s', $emoji, $message));
+        }
+    }
+
+    /**
+     * Affiche un message de succès
+     */
+    protected function success(string $message): void
+    {
+        if ($this->progressService !== null) {
+            $this->progressService->success($message);
+        } else {
+            $this->info('✅ '.$message);
+        }
+    }
+
+    /**
+     * Affiche un message d'erreur
+     */
+    protected function error(string $message): void
+    {
+        if ($this->progressService !== null) {
+            $this->progressService->error($message);
+        } else {
+            $this->line('<fg=red>❌ '.$message.'</>');
+        }
+    }
+
+    /**
+     * Affiche un avertissement
+     */
+    protected function warning(string $message): void
+    {
+        if ($this->progressService !== null) {
+            $this->progressService->warning($message);
+        } else {
+            $this->line('<fg=yellow>⚠️ '.$message.'</>');
+        }
+    }
+
+    /**
+     * Affiche des informations
+     */
+    protected function info(string $message): void
+    {
+        if ($this->progressService !== null) {
+            $this->progressService->info($message);
+        } else {
+            $this->line('<fg=blue>ℹ️ '.$message.'</>');
         }
     }
 

@@ -58,13 +58,38 @@ class AnalyzeBootstrap4Command extends Command
         $multiStep = $this->progressService->multiStep($steps);
         $multiStep->start();
 
-        $analysis = [
-            'general' => $migrator->analyzeApplication(),
-            'deprecated_classes' => $classAnalyzer->findDeprecatedClasses($this->option('detailed')),
-            'cdn_links' => $cdnAnalyzer->findCDNLinks(),
-            'special_cases' => $specialAnalyzer->findSpecialCases(),
-            'file_support' => $this->analyzeFileSupport(),
-        ];
+        // Optimiser les analyseurs avec les services de performance
+        $this->optimizeAnalyzer($classAnalyzer);
+        $this->optimizeAnalyzer($cdnAnalyzer);
+        $this->optimizeAnalyzer($specialAnalyzer);
+
+        $analysis = [];
+
+        $multiStep->nextStep(function () use ($migrator, &$analysis): void {
+            $analysis['general'] = $migrator->analyzeApplication();
+        });
+
+        $multiStep->nextStep(function () use ($classAnalyzer, &$analysis): void {
+            $analysis['deprecated_classes'] = $classAnalyzer->findDeprecatedClasses($this->option('detailed'));
+        });
+
+        $multiStep->nextStep(function () use ($cdnAnalyzer, &$analysis): void {
+            $analysis['cdn_links'] = $cdnAnalyzer->findCDNLinks();
+        });
+
+        $multiStep->nextStep(function () use ($specialAnalyzer, &$analysis): void {
+            $analysis['special_cases'] = $specialAnalyzer->findSpecialCases();
+        });
+
+        $multiStep->nextStep(function () use (&$analysis): void {
+            $analysis['file_support'] = $this->analyzeFileSupport();
+        });
+
+        $multiStep->nextStep(function (): void {
+            // Génération rapport - étape vide pour le moment
+        });
+
+        $multiStep->finish();
 
         $this->displayAnalysis($analysis);
 

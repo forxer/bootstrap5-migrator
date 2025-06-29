@@ -9,7 +9,9 @@ use Bootstrap5Migrator\Commands\ValidateBootstrap5Command;
 use Bootstrap5Migrator\Services\CacheService;
 use Bootstrap5Migrator\Services\FileProcessorService;
 use Bootstrap5Migrator\Services\ProgressService;
+use Illuminate\Console\OutputStyle;
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
+use Symfony\Component\Console\Output\ConsoleOutput;
 
 class ServiceProvider extends BaseServiceProvider
 {
@@ -25,7 +27,9 @@ class ServiceProvider extends BaseServiceProvider
         // Performance services
         $this->app->singleton(CacheService::class);
         $this->app->singleton(FileProcessorService::class);
-        $this->app->bind(ProgressService::class);
+
+        // ProgressService needs output interface so can't be singleton
+        $this->app->bind(ProgressService::class, fn ($app): ProgressService => new ProgressService($app[OutputStyle::class] ?? new ConsoleOutput()));
     }
 
     public function boot(): void
