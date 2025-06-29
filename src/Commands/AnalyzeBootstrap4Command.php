@@ -6,6 +6,9 @@ use Bootstrap5Migrator\Analyzers\CDNAnalyzer;
 use Bootstrap5Migrator\Analyzers\DeprecatedClassAnalyzer;
 use Bootstrap5Migrator\Analyzers\SpecialCaseAnalyzer;
 use Bootstrap5Migrator\Bootstrap5Migrator;
+use Bootstrap5Migrator\Services\FileProcessorService;
+use Bootstrap5Migrator\Services\ProgressService;
+use Bootstrap5Migrator\Services\CacheService;
 use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
@@ -17,7 +20,9 @@ class AnalyzeBootstrap4Command extends Command
     protected $signature = 'bootstrap:analyze
                             {--format=table : Format de sortie (table, json, html)}
                             {--export= : Exporter vers un fichier}
-                            {--detailed : Analyse détaillée avec localisation des problèmes}';
+                            {--detailed : Analyse détaillée avec localisation des problèmes}
+                            {--no-cache : Désactiver le cache pour cette analyse}
+                            {--parallel : Utiliser le traitement parallèle (si disponible)}';
 
     protected $description = 'Analyze your Laravel application for Bootstrap 4 usage and migration readiness';
 
@@ -27,7 +32,34 @@ class AnalyzeBootstrap4Command extends Command
         CDNAnalyzer $cdnAnalyzer,
         SpecialCaseAnalyzer $specialAnalyzer
     ): int {
-        $this->info('🔍 Analyse de votre application Bootstrap 4...');
+        // Initialiser les services de performance
+        $progress = new ProgressService($this->output);
+        $cache = new CacheService();
+        $fileProcessor = new FileProcessorService();
+        
+        $useCache = !$this->option('no-cache');
+        $useParallel = $this->option('parallel');
+        
+        if ($useCache) {
+            $progress->info('Cache activé - les analyses précédentes seront réutilisées');
+        }
+        
+        if ($useParallel) {
+            $progress->info('Mode parallèle activé pour de meilleures performances');
+        }
+
+        // Démarrer l'analyse avec progression multi-étapes
+        $steps = [
+            ['title' => 'Analyse générale', 'description' => 'Détection de Bootstrap, jQuery et Popper.js'],
+            ['title' => 'Classes obsolètes', 'description' => 'Recherche des classes Bootstrap 4 à migrer'],
+            ['title' => 'Liens CDN', 'description' => 'Détection des liens CDN Bootstrap 4'],
+            ['title' => 'Cas spéciaux', 'description' => 'Identification des cas complexes'],
+            ['title' => 'Statistiques fichiers', 'description' => 'Analyse de la structure du projet'],
+            ['title' => 'Génération rapport', 'description' => 'Compilation des résultats']
+        ];
+
+        $multiStep = $progress->multiStep($steps);
+        $multiStep->start();
 
         $analysis = [
             'general' => $migrator->analyzeApplication(),

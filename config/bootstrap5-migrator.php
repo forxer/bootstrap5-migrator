@@ -354,6 +354,96 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Performance et optimisation
+    |--------------------------------------------------------------------------
+    |
+    | Configuration pour optimiser les performances sur de gros projets.
+    |
+    */
+    'performance' => [
+        'chunk_size' => 100,                // Nombre de fichiers traités par chunk
+        'memory_limit' => 128,             // Limite mémoire en MB
+        'enable_cache' => true,             // Activation du cache
+        'cache_ttl' => 3600,               // Durée de vie du cache en secondes
+        'enable_parallel' => false,         // Traitement parallèle (expérimental)
+        'max_file_size' => 5,              // Taille max fichier en MB
+        'max_workers' => 4,                // Nombre de workers pour parallélisme
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Interface utilisateur
+    |--------------------------------------------------------------------------
+    |
+    | Configuration de l'expérience utilisateur et des barres de progression.
+    |
+    */
+    'ui' => [
+        'show_progress_bars' => true,       // Afficher les barres de progression
+        'use_colors' => true,               // Utiliser les couleurs dans la sortie
+        'emoji_enabled' => true,            // Utiliser des emoji dans les messages
+        'detailed_stats' => true,           // Afficher les statistiques détaillées
+        'table_style' => 'box',             // Style des tableaux (box, compact)
+        'progress_format' => 'detailed',    // Format des barres (simple, detailed)
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Filtres intelligents
+    |--------------------------------------------------------------------------
+    |
+    | Configuration pour filtrer les fichiers pertinents avant analyse.
+    |
+    */
+    'filters' => [
+        'enable_smart_filtering' => true,   // Filtrage intelligent des fichiers
+        'bootstrap_keywords' => [           // Mots-clés Bootstrap pour filtrage
+            'bootstrap', 'ml-', 'mr-', 'pl-', 'pr-', 'text-left', 'text-right',
+            'form-group', 'badge-', 'data-toggle', 'data-target'
+        ],
+        'skip_empty_files' => true,         // Ignorer les fichiers vides
+        'min_file_size' => 10,              // Taille minimale en bytes
+        'relevant_extensions_only' => true, // Traiter seulement les extensions pertinentes
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cache avancé
+    |--------------------------------------------------------------------------
+    |
+    | Configuration avancée du système de cache.
+    |
+    */
+    'cache_advanced' => [
+        'strategy' => 'file',               // Stratégie de cache (file, memory, redis)
+        'compression' => true,              // Compresser les données en cache
+        'cleanup_frequency' => 24,          // Nettoyage auto du cache (heures)
+        'max_cache_size' => 100,           // Taille max cache en MB
+        'warmup_common_files' => true,     // Pré-chauffer le cache
+        'cache_analysis_results' => true,   // Mettre en cache les analyses complètes
+        'cache_file_metadata' => true,     // Mettre en cache les métadonnées fichiers
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Monitoring et métriques
+    |--------------------------------------------------------------------------
+    |
+    | Configuration pour le monitoring des performances.
+    |
+    */
+    'monitoring' => [
+        'track_performance' => true,        // Suivre les métriques de performance
+        'log_slow_operations' => true,      // Logger les opérations lentes
+        'slow_operation_threshold' => 5,    // Seuil en secondes
+        'memory_usage_alerts' => true,      // Alertes d'utilisation mémoire
+        'memory_threshold' => 80,           // Seuil mémoire en %
+        'export_metrics' => false,          // Exporter les métriques
+        'metrics_format' => 'json',         // Format des métriques
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Développement et débogage
     |--------------------------------------------------------------------------
     |
@@ -365,5 +455,9 @@ return [
         'log_all_changes' => false,
         'preserve_formatting' => true,
         'backup_before_each_step' => false,
+        'show_processing_time' => true,     // Afficher les temps de traitement
+        'show_memory_usage' => true,        // Afficher l'utilisation mémoire
+        'log_cache_hits' => false,          // Logger les hits/miss du cache
+        'debug_chunk_processing' => false,  // Debug du traitement par chunks
     ],
 ];

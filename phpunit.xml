@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
+    bootstrap="vendor/autoload.php"
+    colors="true"
+    cacheDirectory=".phpunit.cache"
+    beStrictAboutCoverageMetadata="true"
+    beStrictAboutOutputDuringTests="true"
+    executionOrder="random"
+    shortenArraysForExportThreshold="10"
+    failOnWarning="true"
+    failOnRisky="true"
+    failOnEmptyTestSuite="true"
+    failOnIncompleteTests="true"
+    failOnSkippedTests="true">
+
+    <testsuites>
+        <testsuite name="Bootstrap5Migrator Feature Tests">
+            <directory>tests/Feature</directory>
+        </testsuite>
+        <testsuite name="Bootstrap5Migrator Unit Tests">
+            <directory>tests/Unit</directory>
+        </testsuite>
+    </testsuites>
+
+    <source>
+        <include>
+            <directory>src</directory>
+        </include>
+        <exclude>
+            <directory>src/resources</directory>
+            <file>src/ServiceProvider.php</file>
+        </exclude>
+    </source>
+
+    <coverage>
+        <report>
+            <html outputDirectory="tests/coverage/html"/>
+            <text outputFile="tests/coverage/coverage.txt"/>
+            <clover outputFile="tests/coverage/clover.xml"/>
+        </report>
+    </coverage>
+
+    <logging>
+        <junit outputFile="tests/coverage/junit.xml"/>
+    </logging>
+
+    <php>
+        <server name="APP_ENV" value="testing"/>
+        <server name="CACHE_DRIVER" value="array"/>
+        <server name="SESSION_DRIVER" value="array"/>
+        <server name="QUEUE_CONNECTION" value="sync"/>
+        <server name="DB_CONNECTION" value="sqlite"/>
+        <server name="DB_DATABASE" value=":memory:"/>
+    </php>
+</phpunit>
