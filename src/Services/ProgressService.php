@@ -285,7 +285,7 @@ class MultiStepProgress
         $step = $this->steps[$this->currentStep];
         $stepNumber = $this->currentStep + 1;
 
-        $this->output->writeln(\sprintf('<fg=yellow>📋 Étape %d/{count(%s)}: %s</>', $stepNumber, $this->steps, $step['title']));
+        $this->output->writeln(\sprintf('<fg=yellow>📋 Étape %d/%d: %s</>', $stepNumber, \count($this->steps), $step['title']));
 
         if (isset($step['description'])) {
             $this->output->writeln(\sprintf('   <fg=gray>%s</>', $step['description']));
