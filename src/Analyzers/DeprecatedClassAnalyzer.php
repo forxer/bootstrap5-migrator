@@ -3,6 +3,8 @@
 namespace Bootstrap5Migrator\Analyzers;
 
 use Illuminate\Support\Facades\File;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 
 class DeprecatedClassAnalyzer
 {
@@ -92,9 +94,9 @@ class DeprecatedClassAnalyzer
         // Générer le résumé
         $results['summary'] = [
             'total_deprecated_classes' => \count($results['classes']),
-            'high_severity' => \count(array_filter($results['classes'], fn ($c) => $c['severity'] === 'high')),
-            'medium_severity' => \count(array_filter($results['classes'], fn ($c) => $c['severity'] === 'medium')),
-            'low_severity' => \count(array_filter($results['classes'], fn ($c) => $c['severity'] === 'low')),
+            'high_severity' => \count(array_filter($results['classes'], fn ($c): bool => $c['severity'] === 'high')),
+            'medium_severity' => \count(array_filter($results['classes'], fn ($c): bool => $c['severity'] === 'medium')),
+            'low_severity' => \count(array_filter($results['classes'], fn ($c): bool => $c['severity'] === 'low')),
         ];
 
         return $results;
@@ -115,8 +117,8 @@ class DeprecatedClassAnalyzer
 
         foreach ($paths as $path) {
             if (is_dir($path)) {
-                $iterator = new \RecursiveIteratorIterator(
-                    new \RecursiveDirectoryIterator($path)
+                $iterator = new RecursiveIteratorIterator(
+                    new RecursiveDirectoryIterator($path)
                 );
 
                 foreach ($iterator as $file) {
@@ -124,7 +126,7 @@ class DeprecatedClassAnalyzer
                         $filename = $file->getFilename();
 
                         foreach ($extensions as $ext) {
-                            if (str_ends_with($filename, $ext)) {
+                            if (str_ends_with((string) $filename, $ext)) {
                                 $files[] = $file->getPathname();
                                 break;
                             }

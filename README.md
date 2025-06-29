@@ -6,7 +6,7 @@ Bootstrap 5 Migrator pour Laravel
 [![PHP Version](https://img.shields.io/packagist/php-v/forxer/bootstrap5-migrator.svg?style=flat-square)](https://packagist.org/packages/forxer/bootstrap5-migrator)
 [![Laravel Version](https://img.shields.io/badge/Laravel-10.x%20%7C%2011.x-orange.svg?style=flat-square)](https://laravel.com)
 
-Un outil complet et professionnel pour migrer automatiquement vos applications Laravel de Bootstrap 4.6 vers Bootstrap 5.x avec analyse approfondie, validation et rapports détaillés.
+Un outil complet pour migrer automatiquement vos applications Laravel de Bootstrap 4.6 vers Bootstrap 5.x avec analyse approfondie, validation et rapports détaillés.
 
 🚨 Changements majeurs Bootstrap 5
 ----------------------------------

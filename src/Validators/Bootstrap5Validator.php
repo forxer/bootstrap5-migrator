@@ -2,7 +2,10 @@
 
 namespace Bootstrap5Migrator\Validators;
 
+use Exception;
 use Illuminate\Support\Facades\File;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 
 class Bootstrap5Validator
 {
@@ -69,7 +72,7 @@ class Bootstrap5Validator
                 'file' => $packageJsonPath,
             ];
             $results['has_critical_issues'] = true;
-        } elseif (str_contains($bootstrapVersion, '4.')) {
+        } elseif (str_contains((string) $bootstrapVersion, '4.')) {
             $results['critical_issues'][] = [
                 'description' => 'Bootstrap 4 encore présent dans package.json',
                 'file' => $packageJsonPath,
@@ -81,9 +84,9 @@ class Bootstrap5Validator
                 'file' => $packageJsonPath,
                 'action' => 'update_bootstrap_version',
             ];
-        } elseif (str_contains($bootstrapVersion, '5.')) {
+        } elseif (str_contains((string) $bootstrapVersion, '5.')) {
             $results['npm_status'] = '✅ Bootstrap 5 détecté';
-            $results['npm_details'] = "Version: {$bootstrapVersion}";
+            $results['npm_details'] = 'Version: '.$bootstrapVersion;
         }
 
         // Vérifier Popper.js
@@ -137,6 +140,7 @@ class Bootstrap5Validator
                             ];
                         }
                     }
+
                     // Auto variant
                     $autoClass = $class.'auto';
 
@@ -146,30 +150,28 @@ class Bootstrap5Validator
                             'file' => $file,
                         ];
                     }
-                } else {
-                    if (preg_match('/\b'.preg_quote($class, '/').'\b/', $content)) {
-                        $foundIssues[] = [
-                            'class' => $class,
-                            'file' => $file,
-                        ];
-                    }
+                } elseif (preg_match('/\b'.preg_quote($class, '/').'\b/', $content)) {
+                    $foundIssues[] = [
+                        'class' => $class,
+                        'file' => $file,
+                    ];
                 }
             }
         }
 
-        if (! empty($foundIssues)) {
+        if ($foundIssues !== []) {
             $results['css_status'] = '❌ Classes obsolètes détectées';
             $results['css_details'] = \count($foundIssues).' classes obsolètes trouvées';
 
             foreach ($foundIssues as $issue) {
                 $results['critical_issues'][] = [
-                    'description' => "Classe obsolète '{$issue['class']}' trouvée",
+                    'description' => \sprintf("Classe obsolète '%s' trouvée", $issue['class']),
                     'file' => $issue['file'],
                 ];
 
                 $results['fixable_issues'][] = [
                     'type' => 'deprecated_class',
-                    'description' => "Remplacer la classe '{$issue['class']}'",
+                    'description' => \sprintf("Remplacer la classe '%s'", $issue['class']),
                     'file' => $issue['file'],
                     'action' => 'replace_class',
                     'class' => $issue['class'],
@@ -206,14 +208,14 @@ class Bootstrap5Validator
             }
         }
 
-        if (! empty($foundIssues)) {
+        if ($foundIssues !== []) {
             $results['data_attributes_status'] = '❌ Attributs obsolètes';
             $results['data_attributes_details'] = \count($foundIssues).' attributs à mettre à jour';
 
             foreach ($foundIssues as $issue) {
                 $results['fixable_issues'][] = [
                     'type' => 'data_attribute',
-                    'description' => "Mettre à jour l'attribut '{$issue['attribute']}'",
+                    'description' => \sprintf("Mettre à jour l'attribut '%s'", $issue['attribute']),
                     'file' => $issue['file'],
                     'action' => 'update_data_attribute',
                     'attribute' => $issue['attribute'],
@@ -252,7 +254,7 @@ class Bootstrap5Validator
             }
         }
 
-        if (! empty($foundIssues)) {
+        if ($foundIssues !== []) {
             $results['cdn_status'] = '❌ Liens CDN obsolètes';
             $results['cdn_details'] = \count($foundIssues).' liens à mettre à jour';
 
@@ -300,7 +302,7 @@ class Bootstrap5Validator
             }
         }
 
-        if (! empty($foundIssues)) {
+        if ($foundIssues !== []) {
             $results['js_status'] = '⚠️ JavaScript nécessite attention';
             $results['js_details'] = \count($foundIssues).' fichiers avec du code jQuery Bootstrap';
 
@@ -311,7 +313,7 @@ class Bootstrap5Validator
                 ];
             }
 
-            $results['recommendations'][] = 'Migrer le code jQuery Bootstrap vers l\'API JavaScript vanilla de Bootstrap 5';
+            $results['recommendations'][] = "Migrer le code jQuery Bootstrap vers l'API JavaScript vanilla de Bootstrap 5";
         }
 
         return $results;
@@ -319,25 +321,14 @@ class Bootstrap5Validator
 
     public function fixIssue(array $issue): bool
     {
-        switch ($issue['action']) {
-            case 'update_bootstrap_version':
-                return $this->fixBootstrapVersion($issue['file']);
-
-            case 'replace_popper':
-                return $this->fixPopperDependency($issue['file']);
-
-            case 'replace_class':
-                return $this->fixDeprecatedClass($issue['file'], $issue['class']);
-
-            case 'update_data_attribute':
-                return $this->fixDataAttribute($issue['file'], $issue['attribute']);
-
-            case 'update_cdn_link':
-                return $this->fixCDNLink($issue['file'], $issue['old_link']);
-
-            default:
-                return false;
-        }
+        return match ($issue['action']) {
+            'update_bootstrap_version' => $this->fixBootstrapVersion($issue['file']),
+            'replace_popper' => $this->fixPopperDependency($issue['file']),
+            'replace_class' => $this->fixDeprecatedClass($issue['file'], $issue['class']),
+            'update_data_attribute' => $this->fixDataAttribute($issue['file'], $issue['attribute']),
+            'update_cdn_link' => $this->fixCDNLink($issue['file'], $issue['old_link']),
+            default => false,
+        };
     }
 
     private function fixBootstrapVersion(string $file): bool
@@ -357,7 +348,7 @@ class Bootstrap5Validator
             File::put($file, json_encode($packageJson, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception) {
             return false;
         }
     }
@@ -380,7 +371,7 @@ class Bootstrap5Validator
             File::put($file, json_encode($packageJson, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception) {
             return false;
         }
     }
@@ -428,7 +419,7 @@ class Bootstrap5Validator
             }
 
             return false;
-        } catch (\Exception $e) {
+        } catch (Exception) {
             return false;
         }
     }
@@ -454,7 +445,7 @@ class Bootstrap5Validator
             }
 
             return false;
-        } catch (\Exception $e) {
+        } catch (Exception) {
             return false;
         }
     }
@@ -475,7 +466,7 @@ class Bootstrap5Validator
             File::put($file, $content);
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception) {
             return false;
         }
     }
@@ -504,8 +495,8 @@ class Bootstrap5Validator
 
         foreach ($paths as $path) {
             if (is_dir($path)) {
-                $iterator = new \RecursiveIteratorIterator(
-                    new \RecursiveDirectoryIterator($path)
+                $iterator = new RecursiveIteratorIterator(
+                    new RecursiveDirectoryIterator($path)
                 );
 
                 foreach ($iterator as $file) {
@@ -513,7 +504,7 @@ class Bootstrap5Validator
                         $filename = $file->getFilename();
 
                         foreach ($extensions as $ext) {
-                            if (str_ends_with($filename, $ext)) {
+                            if (str_ends_with((string) $filename, $ext)) {
                                 $files[] = $file->getPathname();
                                 break;
                             }
@@ -538,8 +529,8 @@ class Bootstrap5Validator
 
         foreach ($paths as $path) {
             if (is_dir($path)) {
-                $iterator = new \RecursiveIteratorIterator(
-                    new \RecursiveDirectoryIterator($path)
+                $iterator = new RecursiveIteratorIterator(
+                    new RecursiveDirectoryIterator($path)
                 );
 
                 foreach ($iterator as $file) {
@@ -547,7 +538,7 @@ class Bootstrap5Validator
                         $filename = $file->getFilename();
 
                         foreach ($extensions as $ext) {
-                            if (str_ends_with($filename, $ext)) {
+                            if (str_ends_with((string) $filename, $ext)) {
                                 $files[] = $file->getPathname();
                                 break;
                             }

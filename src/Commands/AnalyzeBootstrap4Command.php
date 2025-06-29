@@ -7,6 +7,8 @@ use Bootstrap5Migrator\Analyzers\DeprecatedClassAnalyzer;
 use Bootstrap5Migrator\Analyzers\SpecialCaseAnalyzer;
 use Bootstrap5Migrator\Bootstrap5Migrator;
 use Illuminate\Console\Command;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 
 class AnalyzeBootstrap4Command extends Command
 {
@@ -22,7 +24,7 @@ class AnalyzeBootstrap4Command extends Command
         DeprecatedClassAnalyzer $classAnalyzer,
         CDNAnalyzer $cdnAnalyzer,
         SpecialCaseAnalyzer $specialAnalyzer
-    ) {
+    ): int {
         $this->info('🔍 Analyse de votre application Bootstrap 4...');
 
         $analysis = [
@@ -46,18 +48,11 @@ class AnalyzeBootstrap4Command extends Command
     {
         $format = $this->option('format');
 
-        switch ($format) {
-            case 'json':
-                $this->line(json_encode($analysis, JSON_PRETTY_PRINT));
-                break;
-
-            case 'html':
-                $this->generateHTMLReport($analysis);
-                break;
-
-            default:
-                $this->displayTableFormat($analysis);
-        }
+        match ($format) {
+            'json' => $this->line(json_encode($analysis, JSON_PRETTY_PRINT)),
+            'html' => $this->generateHTMLReport($analysis),
+            default => $this->displayTableFormat($analysis),
+        };
     }
 
     private function displayTableFormat(array $analysis): void
@@ -85,6 +80,7 @@ class AnalyzeBootstrap4Command extends Command
                     $this->option('detailed') ? implode(', ', \array_slice($details['files'] ?? [], 0, 3)) : 'Multiple fichiers',
                 ];
             }
+
             $this->table(['Classe', 'Remplacement', 'Occurrences', 'Fichiers'], $classData);
         }
 
@@ -101,6 +97,7 @@ class AnalyzeBootstrap4Command extends Command
                     $link['suggested_v5_link'],
                 ];
             }
+
             $this->table(['Fichier', 'Version actuelle', 'CDN', 'Lien Bootstrap 5 suggéré'], $cdnData);
         }
 
@@ -109,7 +106,7 @@ class AnalyzeBootstrap4Command extends Command
             $this->error('⚠️ Cas spéciaux nécessitant une attention manuelle :');
 
             foreach ($analysis['special_cases']['issues'] as $issue) {
-                $this->line("• {$issue['type']}: {$issue['description']}");
+                $this->line(\sprintf('• %s: %s', $issue['type'], $issue['description']));
 
                 if (! empty($issue['files'])) {
                     $this->line('  Fichiers affectés: '.implode(', ', \array_slice($issue['files'], 0, 3)));
@@ -122,18 +119,20 @@ class AnalyzeBootstrap4Command extends Command
     {
         $reportPath = storage_path('app/bootstrap-analysis-report.html');
 
-        $html = view('bootstrap5-migrator::analysis-report', compact('analysis'))->render();
+        $html = view('bootstrap5-migrator::analysis-report', ['analysis' => $analysis])->render();
 
         file_put_contents($reportPath, $html);
 
-        $this->info("📄 Rapport HTML généré : {$reportPath}");
+        $this->info('📄 Rapport HTML généré : '.$reportPath);
     }
 
     private function getVersionStatus(string $version): string
     {
         if (str_contains($version, '^4.') || str_contains($version, '4.')) {
             return '🔄 Migration recommandée';
-        } elseif (str_contains($version, '^5.') || str_contains($version, '5.')) {
+        }
+
+        if (str_contains($version, '^5.') || str_contains($version, '5.')) {
             return '✅ Déjà Bootstrap 5';
         }
 
@@ -171,12 +170,12 @@ class AnalyzeBootstrap4Command extends Command
 
         foreach ($paths as $path) {
             if (is_dir($path)) {
-                $iterator = new \RecursiveIteratorIterator(
-                    new \RecursiveDirectoryIterator($path)
+                $iterator = new RecursiveIteratorIterator(
+                    new RecursiveDirectoryIterator($path)
                 );
 
                 foreach ($iterator as $file) {
-                    if ($file->isFile() && str_ends_with($file->getFilename(), $extension)) {
+                    if ($file->isFile() && str_ends_with((string) $file->getFilename(), $extension)) {
                         $count++;
                     }
                 }
@@ -190,20 +189,13 @@ class AnalyzeBootstrap4Command extends Command
     {
         $format = pathinfo($filePath, PATHINFO_EXTENSION);
 
-        switch ($format) {
-            case 'json':
-                file_put_contents($filePath, json_encode($analysis, JSON_PRETTY_PRINT));
-                break;
+        match ($format) {
+            'json' => file_put_contents($filePath, json_encode($analysis, JSON_PRETTY_PRINT)),
+            'csv' => $this->exportToCSV($analysis, $filePath),
+            default => file_put_contents($filePath, print_r($analysis, true)),
+        };
 
-            case 'csv':
-                $this->exportToCSV($analysis, $filePath);
-                break;
-
-            default:
-                file_put_contents($filePath, print_r($analysis, true));
-        }
-
-        $this->info("📁 Analyse exportée vers : {$filePath}");
+        $this->info('📁 Analyse exportée vers : '.$filePath);
     }
 
     private function exportToCSV(array $analysis, string $filePath): void

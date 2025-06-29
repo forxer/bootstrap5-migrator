@@ -512,7 +512,7 @@ class Bootstrap5Migrator
             }
         }
 
-        return array_filter(array_map(fn ($file) => $file->getPathname(), $files), fn ($file): bool => \in_array(pathinfo((string) $file, PATHINFO_EXTENSION), ['css', 'scss', 'sass']));
+        return array_filter(array_map(fn ($file) => $file->getPathname(), $files), fn ($file): bool => \in_array(pathinfo($file, PATHINFO_EXTENSION), ['css', 'scss', 'sass']));
     }
 
     protected function findJavaScriptFiles(): array
@@ -528,13 +528,13 @@ class Bootstrap5Migrator
             }
         }
 
-        return array_filter(array_map(fn ($file) => $file->getPathname(), $files), fn ($file): bool => \in_array(pathinfo((string) $file, PATHINFO_EXTENSION), ['js', 'ts']));
+        return array_filter(array_map(fn ($file) => $file->getPathname(), $files), fn ($file): bool => \in_array(pathinfo($file, PATHINFO_EXTENSION), ['js', 'ts']));
     }
 
     protected function findBladeFiles(): array
     {
         $files = File::allFiles(resource_path('views'));
 
-        return array_filter(array_map(fn ($file) => $file->getPathname(), $files), fn ($file): bool => str_ends_with((string) $file, '.blade.php') || pathinfo((string) $file, PATHINFO_EXTENSION) === 'php');
+        return array_filter(array_map(fn ($file) => $file->getPathname(), $files), fn ($file): bool => str_ends_with($file, '.blade.php') || pathinfo($file, PATHINFO_EXTENSION) === 'php');
     }
 }

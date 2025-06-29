@@ -14,32 +14,25 @@ class GenerateReportCommand extends Command
 
     protected $description = 'Generate a comprehensive migration report';
 
-    public function handle(MigrationReporter $reporter)
+    public function handle(MigrationReporter $reporter): int
     {
         $this->info('📄 Génération du rapport de migration...');
 
         $format = $this->option('format');
-        $outputPath = $this->option('output') ?: storage_path("app/bootstrap-migration-report.{$format}");
+        $outputPath = $this->option('output') ?: storage_path('app/bootstrap-migration-report.'.$format);
 
         $reportData = $reporter->generateReportData();
 
-        switch ($format) {
-            case 'pdf':
-                $this->generatePDFReport($reporter, $reportData, $outputPath);
-                break;
+        match ($format) {
+            'pdf' => $this->generatePDFReport($reporter, $reportData, $outputPath),
+            'markdown' => $this->generateMarkdownReport($reporter, $reportData, $outputPath),
+            default => $this->generateHTMLReport($reporter, $reportData, $outputPath),
+        };
 
-            case 'markdown':
-                $this->generateMarkdownReport($reporter, $reportData, $outputPath);
-                break;
-
-            default:
-                $this->generateHTMLReport($reporter, $reportData, $outputPath);
-        }
-
-        $this->info("✅ Rapport généré : {$outputPath}");
+        $this->info('✅ Rapport généré : '.$outputPath);
 
         if ($this->option('include-screenshots')) {
-            $this->generateScreenshots($outputPath);
+            $this->generateScreenshots();
         }
 
         return 0;
@@ -70,7 +63,7 @@ class GenerateReportCommand extends Command
         // Fallback vers HTML
         $htmlPath = str_replace('.pdf', '.html', $path);
         file_put_contents($htmlPath, $html);
-        $this->info("📄 Rapport HTML généré à la place : {$htmlPath}");
+        $this->info('📄 Rapport HTML généré à la place : '.$htmlPath);
     }
 
     private function generateMarkdownReport(MigrationReporter $reporter, array $data, string $path): void
@@ -79,16 +72,14 @@ class GenerateReportCommand extends Command
         file_put_contents($path, $markdown);
     }
 
-    private function generateScreenshots(string $reportPath): void
+    private function generateScreenshots(): void
     {
         $this->info('📸 Génération des captures d\'écran...');
         $this->warn('⚠️ Fonctionnalité nécessitant Puppeteer ou un outil de capture similaire');
-
         // Cette fonctionnalité nécessiterait l'intégration avec un outil comme :
         // - Puppeteer (Node.js)
         // - Chrome/Chromium headless
         // - Selenium WebDriver
-
         $this->comment('💡 Pour activer les captures d\'écran, installez puppeteer :');
         $this->line('npm install -g puppeteer');
     }

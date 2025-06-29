@@ -3,6 +3,8 @@
 namespace Bootstrap5Migrator\Analyzers;
 
 use Illuminate\Support\Facades\File;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 
 class SpecialCaseAnalyzer
 {
@@ -15,7 +17,7 @@ class SpecialCaseAnalyzer
         ],
         'print_styles' => [
             'pattern' => '/@media\s+print\s*{|\.d-print-/',
-            'description' => 'Styles d\'impression (non inclus dans Bootstrap 5)',
+            'description' => "Styles d'impression (non inclus dans Bootstrap 5)",
             'severity' => 'low',
             'solution' => 'Utiliser Bootstrap Print CSS ou créer des styles d\'impression customisés',
         ],
@@ -23,7 +25,7 @@ class SpecialCaseAnalyzer
             'pattern' => '/\$\([^)]+\)\.(modal|dropdown|tooltip|popover|collapse|carousel|tab)\s*\(/',
             'description' => 'Utilisation de plugins Bootstrap via jQuery',
             'severity' => 'high',
-            'solution' => 'Migrer vers l\'API JavaScript vanilla de Bootstrap 5',
+            'solution' => "Migrer vers l'API JavaScript vanilla de Bootstrap 5",
         ],
         'data_attributes_v4' => [
             'pattern' => '/data-(toggle|target|dismiss|slide|ride|interval|pause|wrap|keyboard|backdrop|focus)=/',
@@ -77,9 +79,9 @@ class SpecialCaseAnalyzer
         // Résumé par sévérité
         $results['summary'] = [
             'total_issues' => \count($results['issues']),
-            'high_severity' => \count(array_filter($results['issues'], fn ($i) => $i['severity'] === 'high')),
-            'medium_severity' => \count(array_filter($results['issues'], fn ($i) => $i['severity'] === 'medium')),
-            'low_severity' => \count(array_filter($results['issues'], fn ($i) => $i['severity'] === 'low')),
+            'high_severity' => \count(array_filter($results['issues'], fn ($i): bool => $i['severity'] === 'high')),
+            'medium_severity' => \count(array_filter($results['issues'], fn ($i): bool => $i['severity'] === 'medium')),
+            'low_severity' => \count(array_filter($results['issues'], fn ($i): bool => $i['severity'] === 'low')),
         ];
 
         return $results;
@@ -101,8 +103,8 @@ class SpecialCaseAnalyzer
 
         foreach ($paths as $path) {
             if (is_dir($path)) {
-                $iterator = new \RecursiveIteratorIterator(
-                    new \RecursiveDirectoryIterator($path)
+                $iterator = new RecursiveIteratorIterator(
+                    new RecursiveDirectoryIterator($path)
                 );
 
                 foreach ($iterator as $file) {
@@ -110,7 +112,7 @@ class SpecialCaseAnalyzer
                         $filename = $file->getFilename();
 
                         foreach ($extensions as $ext) {
-                            if (str_ends_with($filename, $ext)) {
+                            if (str_ends_with((string) $filename, $ext)) {
                                 $files[] = $file->getPathname();
                                 break;
                             }

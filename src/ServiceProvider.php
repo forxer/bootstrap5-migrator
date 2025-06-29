@@ -10,6 +10,15 @@ use Illuminate\Support\ServiceProvider as BaseServiceProvider;
 
 class ServiceProvider extends BaseServiceProvider
 {
+    public function register(): void
+    {
+        $this->mergeConfigFrom(
+            __DIR__.'/../config/bootstrap5-migrator.php', 'bootstrap5-migrator'
+        );
+
+        $this->app->singleton(Bootstrap5Migrator::class);
+    }
+
     public function boot(): void
     {
         if ($this->app->runningInConsole()) {
@@ -24,14 +33,5 @@ class ServiceProvider extends BaseServiceProvider
         $this->publishes([
             __DIR__.'/../config/bootstrap5-migrator.php' => config_path('bootstrap5-migrator.php'),
         ], 'bootstrap5-migrator-config');
-    }
-
-    public function register(): void
-    {
-        $this->mergeConfigFrom(
-            __DIR__.'/../config/bootstrap5-migrator.php', 'bootstrap5-migrator'
-        );
-
-        $this->app->singleton(Bootstrap5Migrator::class);
     }
 }

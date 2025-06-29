@@ -13,7 +13,7 @@ class ValidateBootstrap5Command extends Command
 
     protected $description = 'Validate your Bootstrap 5 migration and detect remaining issues';
 
-    public function handle(Bootstrap5Validator $validator)
+    public function handle(Bootstrap5Validator $validator): int
     {
         $this->info('✅ Validation de votre migration Bootstrap 5...');
 
@@ -41,14 +41,14 @@ class ValidateBootstrap5Command extends Command
         $scoreColor = $score >= 90 ? 'info' : ($score >= 70 ? 'comment' : 'error');
 
         $this->newLine();
-        $this->$scoreColor("📊 Score de migration : {$score}/100");
+        $this->$scoreColor(\sprintf('📊 Score de migration : %s/100', $score));
 
         // Problèmes critiques
         if (! empty($results['critical_issues'])) {
             $this->error('🚨 Problèmes critiques :');
 
             foreach ($results['critical_issues'] as $issue) {
-                $this->line("  • {$issue['description']} ({$issue['file']})");
+                $this->line(\sprintf('  • %s (%s)', $issue['description'], $issue['file']));
             }
         }
 
@@ -57,7 +57,7 @@ class ValidateBootstrap5Command extends Command
             $this->warn('⚠️ Avertissements :');
 
             foreach ($results['warnings'] as $warning) {
-                $this->line("  • {$warning['description']} ({$warning['file']})");
+                $this->line(\sprintf('  • %s (%s)', $warning['description'], $warning['file']));
             }
         }
 
@@ -66,7 +66,7 @@ class ValidateBootstrap5Command extends Command
             $this->info('💡 Recommandations :');
 
             foreach ($results['recommendations'] as $recommendation) {
-                $this->line("  • {$recommendation}");
+                $this->line('  • '.$recommendation);
             }
         }
 
@@ -89,13 +89,13 @@ class ValidateBootstrap5Command extends Command
 
         foreach ($fixableIssues as $issue) {
             if ($validator->fixIssue($issue)) {
-                $this->line("  ✅ Corrigé : {$issue['description']}");
+                $this->line('  ✅ Corrigé : '.$issue['description']);
                 $fixed++;
             } else {
-                $this->line("  ❌ Échec : {$issue['description']}");
+                $this->line('  ❌ Échec : '.$issue['description']);
             }
         }
 
-        $this->info("🎉 {$fixed} problème(s) corrigé(s) automatiquement");
+        $this->info(\sprintf('🎉 %d problème(s) corrigé(s) automatiquement', $fixed));
     }
 }

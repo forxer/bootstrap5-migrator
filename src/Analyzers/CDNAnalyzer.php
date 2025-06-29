@@ -3,6 +3,8 @@
 namespace Bootstrap5Migrator\Analyzers;
 
 use Illuminate\Support\Facades\File;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 
 class CDNAnalyzer
 {
@@ -64,8 +66,8 @@ class CDNAnalyzer
 
         foreach ($paths as $path) {
             if (is_dir($path)) {
-                $iterator = new \RecursiveIteratorIterator(
-                    new \RecursiveDirectoryIterator($path)
+                $iterator = new RecursiveIteratorIterator(
+                    new RecursiveDirectoryIterator($path)
                 );
 
                 foreach ($iterator as $file) {
@@ -73,7 +75,7 @@ class CDNAnalyzer
                         $filename = $file->getFilename();
 
                         foreach ($extensions as $ext) {
-                            if (str_ends_with($filename, $ext)) {
+                            if (str_ends_with((string) $filename, $ext)) {
                                 $files[] = $file->getPathname();
                                 break;
                             }

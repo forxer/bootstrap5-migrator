@@ -7,33 +7,18 @@ use Bootstrap5Migrator\Analyzers\DeprecatedClassAnalyzer;
 use Bootstrap5Migrator\Analyzers\SpecialCaseAnalyzer;
 use Bootstrap5Migrator\Bootstrap5Migrator;
 use Bootstrap5Migrator\Validators\Bootstrap5Validator;
+use Exception;
 use Illuminate\Support\Facades\File;
 
 class MigrationReporter
 {
-    protected $migrator;
-
-    protected $classAnalyzer;
-
-    protected $cdnAnalyzer;
-
-    protected $specialAnalyzer;
-
-    protected $validator;
-
     public function __construct(
-        Bootstrap5Migrator $migrator,
-        DeprecatedClassAnalyzer $classAnalyzer,
-        CDNAnalyzer $cdnAnalyzer,
-        SpecialCaseAnalyzer $specialAnalyzer,
-        Bootstrap5Validator $validator
-    ) {
-        $this->migrator = $migrator;
-        $this->classAnalyzer = $classAnalyzer;
-        $this->cdnAnalyzer = $cdnAnalyzer;
-        $this->specialAnalyzer = $specialAnalyzer;
-        $this->validator = $validator;
-    }
+        protected Bootstrap5Migrator $migrator,
+        protected DeprecatedClassAnalyzer $classAnalyzer,
+        protected CDNAnalyzer $cdnAnalyzer,
+        protected SpecialCaseAnalyzer $specialAnalyzer,
+        protected Bootstrap5Validator $validator,
+    ) {}
 
     public function generateReportData(): array
     {
@@ -102,7 +87,6 @@ class MigrationReporter
     private function generateComparisonHTML(array $comparison): string
     {
         $scoreImprovement = $comparison['score_improvement'];
-        $improvementClass = $scoreImprovement['improvement'] > 0 ? 'success' : 'warning';
 
         return "<!DOCTYPE html>
 <html lang='fr'>
@@ -162,26 +146,6 @@ class MigrationReporter
                     </tr>
                 </thead>
                 <tbody>";
-
-        foreach ($comparison['issues_resolved'] as $type => $data) {
-            $typeName = match ($type) {
-                'deprecated_classes' => 'Classes obsolètes',
-                'cdn_links' => 'Liens CDN',
-                'special_cases' => 'Cas spéciaux',
-                default => $type
-            };
-
-            $html .= "<tr>
-                <td>{$typeName}</td>
-                <td>{$data['before']}</td>
-                <td class='remaining'>{$data['after']}</td>
-                <td class='resolved'>{$data['resolved']}</td>
-            </tr>";
-        }
-
-        $html .= '</tbody></table></div></div></body></html>';
-
-        return $html;
     }
 
     private function generatePostMigrationRecommendations(array $afterData): array
@@ -364,7 +328,7 @@ exit 0
      */
     public function createRollbackPoint(string $identifier): bool
     {
-        $rollbackDir = storage_path("app/bootstrap-migration-rollback/{$identifier}");
+        $rollbackDir = storage_path('app/bootstrap-migration-rollback/'.$identifier);
 
         if (! File::exists($rollbackDir)) {
             File::makeDirectory($rollbackDir, 0755, true);
@@ -407,7 +371,7 @@ exit 0
             File::put($rollbackDir.'/metadata.json', json_encode($metadata, JSON_PRETTY_PRINT));
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception) {
             return false;
         }
     }
@@ -432,7 +396,7 @@ exit 0
             if (File::exists($metadataPath)) {
                 $metadata = json_decode(File::get($metadataPath), true);
                 $points[] = [
-                    'identifier' => basename($dir),
+                    'identifier' => basename((string) $dir),
                     'created_at' => $metadata['created_at'] ?? 'Unknown',
                     'size' => $this->getDirectorySize($dir),
                     'path' => $dir,
@@ -463,7 +427,7 @@ exit 0
         $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
         $pow = min($pow, \count($units) - 1);
 
-        $bytes /= pow(1024, $pow);
+        $bytes /= 1024 ** $pow;
 
         return round($bytes, 2).' '.$units[$pow];
     }
@@ -833,9 +797,9 @@ exit 0
     public function generateMarkdownReport(array $data): string
     {
         $markdown = "# 📊 Rapport de Migration Bootstrap 5\n\n";
-        $markdown .= "**Application:** {$data['meta']['app_name']}\n";
-        $markdown .= "**Généré le:** {$data['meta']['generated_at']}\n";
-        $markdown .= "**Laravel:** {$data['meta']['laravel_version']}\n";
+        $markdown .= \sprintf('**Application:** %s%s', $data['meta']['app_name'], PHP_EOL);
+        $markdown .= \sprintf('**Généré le:** %s%s', $data['meta']['generated_at'], PHP_EOL);
+        $markdown .= \sprintf('**Laravel:** %s%s', $data['meta']['laravel_version'], PHP_EOL);
         $markdown .= "**PHP:** {$data['meta']['php_version']}\n\n";
 
         // Score
@@ -854,7 +818,7 @@ exit 0
         $markdown .= "## 📈 Statistiques\n\n";
         $markdown .= "| Métrique | Valeur | Statut |\n";
         $markdown .= "|----------|--------|--------|\n";
-        $markdown .= "| Bootstrap Version | {$data['analysis']['general']['bootstrap_version']} | ".
+        $markdown .= \sprintf('| Bootstrap Version | %s | ', $data['analysis']['general']['bootstrap_version']).
                     ($data['analysis']['general']['bootstrap_version'] === '4.6.x' ? '🔄 Migration requise' : '✅ OK')." |\n";
         $markdown .= '| jQuery Usage | '.($data['analysis']['general']['jquery_usage'] ? 'Détecté' : 'Non détecté').' | '.
                     ($data['analysis']['general']['jquery_usage'] ? '⚠️ À vérifier' : '✅ OK')." |\n";
@@ -876,6 +840,7 @@ exit 0
                            ($details['severity'] === 'medium' ? '🟡 Moyenne' : '🟢 Faible');
                 $markdown .= "| `{$class}` | `{$details['replacement']}` | {$details['count']} | {$severity} |\n";
             }
+
             $markdown .= "\n";
         }
 
@@ -896,6 +861,7 @@ exit 0
                     foreach ($issue['examples'] as $example) {
                         $markdown .= "- `{$example}`\n";
                     }
+
                     $markdown .= "\n";
                 }
             }
@@ -914,8 +880,9 @@ exit 0
         $markdown .= "## 💡 Recommandations\n\n";
 
         foreach ($data['recommendations'] as $recommendation) {
-            $markdown .= "- {$recommendation}\n";
+            $markdown .= \sprintf('- %s%s', $recommendation, PHP_EOL);
         }
+
         $markdown .= "\n";
 
         // Commandes utiles
@@ -930,9 +897,8 @@ exit 0
         $markdown .= "```\n\n";
 
         $markdown .= "---\n";
-        $markdown .= "*Rapport généré par [Bootstrap 5 Migrator](https://github.com/forxer/bootstrap5-migrator)*\n";
 
-        return $markdown;
+        return $markdown."*Rapport généré par [Bootstrap 5 Migrator](https://github.com/forxer/bootstrap5-migrator)*\n";
     }
 
     private function generateReportContent(array $data): string
@@ -943,9 +909,8 @@ exit 0
         $content .= $this->generateIssuesSection($data['analysis']);
         $content .= $this->generateValidationSection($data['validation']);
         $content .= $this->generateChecklistSection($data['migration_checklist']);
-        $content .= $this->generateRecommendationsSection($data['recommendations']);
 
-        return $content;
+        return $content.$this->generateRecommendationsSection($data['recommendations']);
     }
 
     private function generateScoreSection(array $validation): string
@@ -1006,9 +971,7 @@ exit 0
             </div>";
         }
 
-        $html .= '</div></div>';
-
-        return $html;
+        return $html.'</div></div>';
     }
 
     private function generateSummarySection(array $analysis): string
@@ -1032,7 +995,7 @@ exit 0
                 'element' => 'Bootstrap Version',
                 'status' => $analysis['general']['bootstrap_version'],
                 'details' => $this->getVersionStatus($analysis['general']['bootstrap_version']),
-                'action' => str_contains($analysis['general']['bootstrap_version'], '4.') ? 'Migration requise' : 'OK',
+                'action' => str_contains((string) $analysis['general']['bootstrap_version'], '4.') ? 'Migration requise' : 'OK',
             ],
             [
                 'element' => 'jQuery Usage',
@@ -1064,9 +1027,7 @@ exit 0
             </tr>";
         }
 
-        $html .= '</tbody></table></div>';
-
-        return $html;
+        return $html.'</tbody></table></div>';
     }
 
     private function generateIssuesSection(array $analysis): string
@@ -1117,8 +1078,9 @@ exit 0
                     $html .= "<p><strong>Exemples :</strong></p><div class='code-block'>";
 
                     foreach (\array_slice($issue['examples'], 0, 3) as $example) {
-                        $html .= "<code>{$example}</code><br>";
+                        $html .= \sprintf('<code>%s</code><br>', $example);
                     }
+
                     $html .= '</div>';
                 }
 
@@ -1126,9 +1088,7 @@ exit 0
             }
         }
 
-        $html .= '</div>';
-
-        return $html;
+        return $html.'</div>';
     }
 
     private function generateValidationSection(array $validation): string
@@ -1179,7 +1139,7 @@ exit 0
 
             foreach ($groupedIssues as $action => $issues) {
                 $actionName = $this->getActionDisplayName($action);
-                $html .= "<h4>{$actionName} (".\count($issues).' problèmes)</h4>';
+                $html .= \sprintf('<h4>%s (', $actionName).\count($issues).' problèmes)</h4>';
 
                 foreach (\array_slice($issues, 0, 5) as $issue) {
                     $html .= "
@@ -1191,7 +1151,7 @@ exit 0
 
                 if (\count($issues) > 5) {
                     $remaining = \count($issues) - 5;
-                    $html .= "<p><em>... et {$remaining} autres problèmes similaires</em></p>";
+                    $html .= \sprintf('<p><em>... et %d autres problèmes similaires</em></p>', $remaining);
                 }
             }
         }
@@ -1238,8 +1198,9 @@ exit 0
             $html .= '<ul>';
 
             foreach ($validation['recommendations'] as $recommendation) {
-                $html .= "<li>{$recommendation}</li>";
+                $html .= \sprintf('<li>%s</li>', $recommendation);
             }
+
             $html .= '</ul>';
         }
 
@@ -1281,9 +1242,7 @@ exit 0
 
         $html .= '</div>';
 
-        $html .= '</div>';
-
-        return $html;
+        return $html.'</div>';
     }
 
     private function getActionDisplayName(string $action): string
@@ -1302,9 +1261,13 @@ exit 0
     {
         if (str_contains($status, '✅')) {
             return 'Aucune action requise';
-        } elseif (str_contains($status, '❌')) {
+        }
+
+        if (str_contains($status, '❌')) {
             return 'Action immédiate requise';
-        } elseif (str_contains($status, '⚠️')) {
+        }
+
+        if (str_contains($status, '⚠️')) {
             return 'Vérification recommandée';
         } else {
             return 'À évaluer';
@@ -1315,9 +1278,13 @@ exit 0
     {
         if (str_contains($status, '✅')) {
             return 'success';
-        } elseif (str_contains($status, '❌')) {
+        }
+
+        if (str_contains($status, '❌')) {
             return 'danger';
-        } elseif (str_contains($status, '⚠️')) {
+        }
+
+        if (str_contains($status, '⚠️')) {
             return 'warning';
         } else {
             return 'info';
