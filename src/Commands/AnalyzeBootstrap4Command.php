@@ -6,7 +6,9 @@ use Bootstrap5Migrator\Analyzers\CDNAnalyzer;
 use Bootstrap5Migrator\Analyzers\DeprecatedClassAnalyzer;
 use Bootstrap5Migrator\Analyzers\SpecialCaseAnalyzer;
 use Bootstrap5Migrator\Bootstrap5Migrator;
+use Exception;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\File;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
@@ -57,15 +59,20 @@ class AnalyzeBootstrap4Command extends Command
 
     private function generateHTMLReport(array $analysis): void
     {
-        // Utiliser la vue Blade pour générer le HTML
-        $html = view('bootstrap5-migrator::analysis-report', ['analysis' => $analysis])->render();
+        try {
+            $html = view('bootstrap5-migrator::analysis-report', ['analysis' => $analysis])->render();
 
-        if ($this->option('export')) {
-            $outputPath = $this->option('export');
-            file_put_contents($outputPath, $html);
-            $this->info('📄 Rapport HTML généré : '.$outputPath);
-        } else {
-            // Si pas d'export, afficher un résumé dans la console
+            if ($this->option('export')) {
+                $outputPath = $this->option('export');
+                File::put($outputPath, $html);
+                $this->info('📄 Rapport HTML généré : '.$outputPath);
+            } else {
+                $this->info('📄 Rapport HTML généré (utilisez --export pour sauvegarder)');
+                $this->displayTableFormat($analysis);
+            }
+        } catch (Exception $exception) {
+            $this->error('❌ Erreur lors de la génération du rapport HTML : '.$exception->getMessage());
+            $this->warn('Utilisation du format table à la place...');
             $this->displayTableFormat($analysis);
         }
     }
@@ -75,11 +82,11 @@ class AnalyzeBootstrap4Command extends Command
         // Résumé général
         $this->info('📊 Résumé de l\'analyse');
         $this->table(['Élément', 'Statut', 'Détails'], [
-            ['Bootstrap Version', $analysis['general']['bootstrap_version'], $this->getVersionStatus($analysis['general']['bootstrap_version'])],
+            ['Bootstrap Version', $analysis['general']['bootstrap_version'] ?? 'Non détecté', $this->getVersionStatus($analysis['general']['bootstrap_version'] ?? '')],
             ['jQuery Usage', $analysis['general']['jquery_usage'] ? 'Détecté' : 'Non détecté', $analysis['general']['jquery_usage'] ? '⚠️ À vérifier' : '✅ OK'],
-            ['Classes obsolètes', \count($analysis['deprecated_classes']['classes']), \count($analysis['deprecated_classes']['classes']).' trouvées'],
-            ['Liens CDN', \count($analysis['cdn_links']), \count($analysis['cdn_links']).' à mettre à jour'],
-            ['Cas spéciaux', \count($analysis['special_cases']['issues']), \count($analysis['special_cases']['issues']).' problèmes détectés'],
+            ['Classes obsolètes', \count($analysis['deprecated_classes']['classes'] ?? []), \count($analysis['deprecated_classes']['classes'] ?? []).' trouvées'],
+            ['Liens CDN', \count($analysis['cdn_links'] ?? []), \count($analysis['cdn_links'] ?? []).' à mettre à jour'],
+            ['Cas spéciaux', \count($analysis['special_cases']['issues'] ?? []), \count($analysis['special_cases']['issues'] ?? []).' problèmes détectés'],
         ]);
 
         // Classes obsolètes détaillées
@@ -94,9 +101,19 @@ class AnalyzeBootstrap4Command extends Command
                     $details['count'] ?? 0,
                     $this->option('detailed') ? implode(', ', \array_slice($details['files'] ?? [], 0, 3)) : 'Multiple fichiers',
                 ];
+
+                // Limiter l'affichage pour éviter la surcharge
+                if (\count($classData) >= 10) {
+                    break;
+                }
             }
 
             $this->table(['Classe', 'Remplacement', 'Occurrences', 'Fichiers'], $classData);
+
+            if (\count($analysis['deprecated_classes']['classes']) > 10) {
+                $remaining = \count($analysis['deprecated_classes']['classes']) - 10;
+                $this->info(\sprintf('... et %d autres classes obsolètes (utilisez --format=html pour voir toutes)', $remaining));
+            }
         }
 
         // CDN Links
@@ -106,28 +123,117 @@ class AnalyzeBootstrap4Command extends Command
 
             foreach ($analysis['cdn_links'] as $link) {
                 $cdnData[] = [
-                    $link['file'],
-                    $link['current_version'],
-                    $link['provider'],
-                    $link['suggested_v5_link'],
+                    basename($link['file'] ?? ''),
+                    $link['current_version'] ?? 'N/A',
+                    $link['provider'] ?? 'N/A',
+                    $link['suggested_v5_link'] ?? 'N/A',
                 ];
             }
 
             $this->table(['Fichier', 'Version actuelle', 'CDN', 'Lien Bootstrap 5 suggéré'], $cdnData);
         }
 
-        // Cas spéciaux
+        // Cas spéciaux (résumé)
         if (! empty($analysis['special_cases']['issues'])) {
             $this->error('⚠️ Cas spéciaux nécessitant une attention manuelle :');
+            $issuesSummary = [];
 
             foreach ($analysis['special_cases']['issues'] as $issue) {
-                $this->line(\sprintf('• %s: %s', $issue['type'], $issue['description']));
-
-                if (! empty($issue['files'])) {
-                    $this->line('  Fichiers affectés: '.implode(', ', \array_slice($issue['files'], 0, 3)));
-                }
+                $issuesSummary[$issue['type']] = ($issuesSummary[$issue['type']] ?? 0) + 1;
             }
+
+            foreach ($issuesSummary as $type => $count) {
+                $this->line(\sprintf('  • %s: %d occurrence(s)', $type, $count));
+            }
+
+            $this->info('💡 Utilisez --format=html pour voir les détails complets');
         }
+    }
+
+    private function exportAnalysis(array $analysis, string $filePath): void
+    {
+        $format = pathinfo($filePath, PATHINFO_EXTENSION);
+
+        try {
+            switch ($format) {
+                case 'json':
+                    File::put($filePath, json_encode($analysis, JSON_PRETTY_PRINT));
+                    break;
+
+                case 'html':
+                    $html = view('bootstrap5-migrator::analysis-report', ['analysis' => $analysis])->render();
+                    File::put($filePath, $html);
+                    break;
+
+                case 'csv':
+                    $this->exportToCSV($analysis, $filePath);
+                    break;
+
+                default:
+                    // Format texte par défaut
+                    $content = "RAPPORT D'ANALYSE BOOTSTRAP 4\n";
+                    $content .= "================================\n\n";
+                    $content .= 'Généré le : '.now()->format('d/m/Y H:i:s')."\n\n";
+                    $content .= print_r($analysis, true);
+                    File::put($filePath, $content);
+            }
+
+            $this->info('📁 Analyse exportée vers : '.$filePath);
+
+        } catch (Exception $exception) {
+            $this->error("❌ Erreur lors de l'export : ".$exception->getMessage());
+        }
+    }
+
+    private function exportToCSV(array $analysis, string $filePath): void
+    {
+        $handle = fopen($filePath, 'w');
+
+        if (! $handle) {
+            throw new Exception('Impossible de créer le fichier CSV : '.$filePath);
+        }
+
+        // En-têtes
+        fputcsv($handle, ['Type', 'Élément', 'Statut', 'Détails', 'Fichiers']);
+
+        // Informations générales
+        fputcsv($handle, ['Général', 'Bootstrap Version', $analysis['general']['bootstrap_version'] ?? 'N/A', '', '']);
+        fputcsv($handle, ['Général', 'jQuery Usage', $analysis['general']['jquery_usage'] ? 'Oui' : 'Non', '', '']);
+
+        // Classes obsolètes
+        foreach ($analysis['deprecated_classes']['classes'] ?? [] as $class => $details) {
+            fputcsv($handle, [
+                'Classe obsolète',
+                $class,
+                'À remplacer',
+                $details['replacement'] ?? 'Supprimée',
+                implode(';', $details['files'] ?? []),
+            ]);
+        }
+
+        // CDN Links
+        foreach ($analysis['cdn_links'] ?? [] as $link) {
+            fputcsv($handle, [
+                'CDN Link',
+                $link['current_version'] ?? 'N/A',
+                'À mettre à jour',
+                $link['suggested_v5_link'] ?? 'N/A',
+                $link['file'] ?? '',
+            ]);
+        }
+
+        // Cas spéciaux
+        foreach ($analysis['special_cases']['issues'] ?? [] as $issue) {
+            fputcsv($handle, [
+                'Cas spécial',
+                $issue['description'] ?? 'N/A',
+                $issue['severity'] ?? 'N/A',
+                $issue['solution'] ?? 'N/A',
+                $issue['file'] ?? '',
+            ]);
+        }
+
+        fclose($handle);
     }
 
     private function getVersionStatus(string $version): string
@@ -174,67 +280,27 @@ class AnalyzeBootstrap4Command extends Command
 
         foreach ($paths as $path) {
             if (is_dir($path)) {
-                $iterator = new RecursiveIteratorIterator(
-                    new RecursiveDirectoryIterator($path)
-                );
+                try {
+                    $iterator = new RecursiveIteratorIterator(
+                        new RecursiveDirectoryIterator($path, RecursiveDirectoryIterator::SKIP_DOTS)
+                    );
 
-                foreach ($iterator as $file) {
-                    if ($file->isFile() && str_ends_with((string) $file->getFilename(), $extension)) {
-                        $count++;
+                    foreach ($iterator as $file) {
+                        if ($file->isFile()) {
+                            if ($extension === 'blade.php' && str_ends_with((string) $file->getFilename(), '.blade.php')) {
+                                $count++;
+                            } elseif ($extension !== 'blade.php' && str_ends_with((string) $file->getFilename(), '.'.$extension)) {
+                                $count++;
+                            }
+                        }
                     }
+                } catch (Exception) {
+                    // Ignorer les erreurs de permissions sur certains répertoires
+                    continue;
                 }
             }
         }
 
         return $count;
-    }
-
-    private function exportAnalysis(array $analysis, string $filePath): void
-    {
-        $format = pathinfo($filePath, PATHINFO_EXTENSION);
-
-        match ($format) {
-            'json' => file_put_contents($filePath, json_encode($analysis, JSON_PRETTY_PRINT)),
-            'html' => file_put_contents($filePath,
-                view('bootstrap5-migrator::analysis-report', ['analysis' => $analysis])->render()
-            ),
-            'csv' => $this->exportToCSV($analysis, $filePath),
-            // Pour les autres extensions, utiliser print_r
-            default => file_put_contents($filePath, print_r($analysis, true)),
-        };
-
-        $this->info('📁 Analyse exportée vers : '.$filePath);
-    }
-
-    private function exportToCSV(array $analysis, string $filePath): void
-    {
-        $fp = fopen($filePath, 'w');
-
-        // En-têtes
-        fputcsv($fp, ['Type', 'Élément', 'Statut', 'Détails', 'Fichiers']);
-
-        // Classes obsolètes
-        foreach ($analysis['deprecated_classes']['classes'] as $class => $details) {
-            fputcsv($fp, [
-                'Classe obsolète',
-                $class,
-                'À remplacer',
-                $details['replacement'] ?? 'Supprimée',
-                implode(';', $details['files'] ?? []),
-            ]);
-        }
-
-        // CDN Links
-        foreach ($analysis['cdn_links'] as $link) {
-            fputcsv($fp, [
-                'CDN Link',
-                $link['current_version'],
-                'À mettre à jour',
-                $link['suggested_v5_link'],
-                $link['file'],
-            ]);
-        }
-
-        fclose($fp);
     }
 }
