@@ -5,6 +5,10 @@ return [
     |--------------------------------------------------------------------------
     | Répertoires à analyser
     |--------------------------------------------------------------------------
+    |
+    | Définit les répertoires que l'outil va scanner pour détecter
+    | les fichiers à migrer vers Bootstrap 5.
+    |
     */
     'scan_directories' => [
         'css' => [
@@ -17,43 +21,59 @@ return [
         ],
         'views' => [
             resource_path('views'),
+            // Ajoutez d'autres répertoires si nécessaire
+            // public_path('templates'),
         ],
     ],
 
     /*
     |--------------------------------------------------------------------------
-    | Extensions de fichiers à traiter
+    | Extensions de fichiers supportées
     |--------------------------------------------------------------------------
+    |
+    | Extensions de fichiers que l'outil va traiter lors de la migration.
+    |
     */
     'file_extensions' => [
-        'css' => ['css', 'scss', 'sass'],
-        'js' => ['js', 'ts'],
-        'views' => ['php', 'blade.php'],
+        'css' => ['css', 'scss', 'sass', 'less'],
+        'js' => ['js', 'ts', 'jsx', 'tsx'],
+        'views' => ['php', 'blade.php', 'html', 'htm', 'twig', 'vue', 'ejs', 'erb', 'hbs', 'jsp', 'asp', 'aspx', 'cshtml'],
     ],
 
     /*
     |--------------------------------------------------------------------------
-    | Versions des packages NPM pour Bootstrap 5
+    | Versions des packages NPM
     |--------------------------------------------------------------------------
+    |
+    | Versions cibles pour la migration vers Bootstrap 5.
+    |
     */
     'npm_packages' => [
-        'bootstrap' => '^5.3.0',
+        'bootstrap' => '^5.3.2',
         '@popperjs/core' => '^2.11.8',
     ],
 
     /*
     |--------------------------------------------------------------------------
-    | Packages à supprimer (Bootstrap 4)
+    | Packages à supprimer
     |--------------------------------------------------------------------------
+    |
+    | Packages NPM obsolètes à supprimer lors de la migration.
+    |
     */
     'packages_to_remove' => [
-        'popper.js', // Remplacé par @popperjs/core dans Bootstrap 5
+        'popper.js', // Remplacé par @popperjs/core
+        // 'jquery', // Décommentez si vous voulez supprimer jQuery automatiquement
     ],
 
     /*
     |--------------------------------------------------------------------------
     | Mappings des classes CSS Bootstrap 4 → Bootstrap 5
     |--------------------------------------------------------------------------
+    |
+    | Correspondances pour la migration automatique des classes CSS.
+    | Vous pouvez ajouter vos propres mappings personnalisés.
+    |
     */
     'class_mappings' => [
         // Spacing utilities (direction-aware)
@@ -120,12 +140,18 @@ return [
         // Screen readers
         'sr-only' => 'visually-hidden',
         'sr-only-focusable' => 'visually-hidden-focusable',
+
+        // Ajoutez vos mappings personnalisés ici...
+        // 'my-custom-class-v4' => 'my-custom-class-v5',
     ],
 
     /*
     |--------------------------------------------------------------------------
-    | Attributs data-* à migrer
+    | Mappings des attributs data-*
     |--------------------------------------------------------------------------
+    |
+    | Bootstrap 5 préfixe tous les attributs data-* avec 'data-bs-'
+    |
     */
     'data_attribute_mappings' => [
         'data-toggle' => 'data-bs-toggle',
@@ -140,12 +166,19 @@ return [
         'data-keyboard' => 'data-bs-keyboard',
         'data-backdrop' => 'data-bs-backdrop',
         'data-focus' => 'data-bs-focus',
+        'data-offset' => 'data-bs-offset',
+        'data-reference' => 'data-bs-reference',
+        'data-boundary' => 'data-bs-boundary',
+        'data-display' => 'data-bs-display',
     ],
 
     /*
     |--------------------------------------------------------------------------
     | Variables SCSS Bootstrap 5
     |--------------------------------------------------------------------------
+    |
+    | Nouvelles variables SCSS introduites dans Bootstrap 5
+    |
     */
     'scss_variables' => [
         '$enable-rounded' => '$enable-rounded: true',
@@ -167,6 +200,9 @@ return [
     |--------------------------------------------------------------------------
     | Commandes de compilation
     |--------------------------------------------------------------------------
+    |
+    | Commandes NPM à exécuter après la migration pour compiler les assets.
+    |
     */
     'build_commands' => [
         'dev' => ['npm', 'run', 'dev'],
@@ -177,22 +213,157 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Sauvegarde automatique
+    | Configuration des sauvegardes
     |--------------------------------------------------------------------------
+    |
+    | Paramètres pour les sauvegardes automatiques avant migration.
+    |
     */
     'backup' => [
         'enabled' => true,
-        'path' => base_path('backups'),
+        'path' => storage_path('app/bootstrap-migration-backups'),
         'keep_days' => 30,
+        'compress' => true, // Compresser les sauvegardes en ZIP
     ],
 
     /*
     |--------------------------------------------------------------------------
-    | jQuery - Gestion optionnelle
+    | Gestion de jQuery
     |--------------------------------------------------------------------------
+    |
+    | Bootstrap 5 ne dépend plus de jQuery. Configurez ici comment gérer
+    | cette transition dans votre projet.
+    |
     */
     'jquery' => [
-        'remove_automatically' => false, // Si true, supprime jQuery du package.json
-        'show_warnings' => true, // Affiche des avertissements sur l'usage de jQuery
+        'remove_automatically' => false, // Supprimer jQuery automatiquement
+        'show_warnings' => true, // Afficher des avertissements sur l'usage de jQuery
+        'detect_usage' => true, // Détecter l'usage de jQuery dans le code
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Analyse et validation
+    |--------------------------------------------------------------------------
+    |
+    | Options pour l'analyse et la validation de la migration.
+    |
+    */
+    'analysis' => [
+        'detailed_reports' => true,
+        'include_file_locations' => true,
+        'severity_levels' => ['low', 'medium', 'high'],
+        'export_formats' => ['json', 'html', 'csv'],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cas spéciaux à détecter
+    |--------------------------------------------------------------------------
+    |
+    | Patterns et situations spécifiques nécessitant une attention manuelle.
+    |
+    */
+    'special_cases' => [
+        'negative_margins' => [
+            'pattern' => '/\b[mp][tblrxy]?-n[0-5]\b/',
+            'severity' => 'medium',
+            'description' => 'Classes à marges/padding négatives non incluses dans le CDN Bootstrap 5',
+        ],
+        'print_styles' => [
+            'pattern' => '/@media\s+print\s*{|\.d-print-/',
+            'severity' => 'low',
+            'description' => 'Styles d\'impression (non inclus dans Bootstrap 5)',
+        ],
+        'jquery_bootstrap_plugins' => [
+            'pattern' => '/\$\([^)]+\)\.(modal|dropdown|tooltip|popover|collapse|carousel|tab)\s*\(/',
+            'severity' => 'high',
+            'description' => 'Utilisation de plugins Bootstrap via jQuery',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Exclusions
+    |--------------------------------------------------------------------------
+    |
+    | Fichiers et répertoires à ignorer lors de la migration.
+    |
+    */
+    'exclude' => [
+        'directories' => [
+            'node_modules',
+            'vendor',
+            '.git',
+            'storage/framework',
+            'bootstrap/cache',
+        ],
+        'files' => [
+            '*.min.js',
+            '*.min.css',
+            'package-lock.json',
+            'composer.lock',
+        ],
+        'patterns' => [
+            '/\/\*.*?\*\//', // Commentaires CSS
+            '/<!--.*?-->/', // Commentaires HTML
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validation et scoring
+    |--------------------------------------------------------------------------
+    |
+    | Configuration du système de scoring et validation.
+    |
+    */
+    'scoring' => [
+        'weights' => [
+            'critical_issues' => -15,
+            'warnings' => -5,
+            'deprecated_classes' => -10,
+            'cdn_links' => -5,
+            'special_cases' => -2,
+        ],
+        'thresholds' => [
+            'excellent' => 90,
+            'good' => 70,
+            'needs_attention' => 50,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Rapports
+    |--------------------------------------------------------------------------
+    |
+    | Configuration pour la génération de rapports.
+    |
+    */
+    'reports' => [
+        'default_format' => 'html',
+        'include_screenshots' => false,
+        'templates' => [
+            'html' => 'bootstrap5-migrator::report',
+            'comparison' => 'bootstrap5-migrator::comparison',
+            'performance' => 'bootstrap5-migrator::performance',
+        ],
+        'export_path' => storage_path('app/bootstrap-migration-reports'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Développement et débogage
+    |--------------------------------------------------------------------------
+    |
+    | Options utiles pendant le développement et le débogage.
+    |
+    */
+    'debug' => [
+        'verbose_output' => false,
+        'log_all_changes' => false,
+        'preserve_formatting' => true,
+        'backup_before_each_step' => false,
     ],
 ];
