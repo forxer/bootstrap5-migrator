@@ -9,6 +9,8 @@ use Bootstrap5Migrator\Bootstrap5Migrator;
 use Bootstrap5Migrator\Validators\Bootstrap5Validator;
 use Exception;
 use Illuminate\Support\Facades\File;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 
 class MigrationReporter
 {
@@ -1269,9 +1271,9 @@ exit 0
 
         if (str_contains($status, '⚠️')) {
             return 'Vérification recommandée';
-        } else {
-            return 'À évaluer';
         }
+
+        return 'À évaluer';
     }
 
     private function getStatusClass(string $status): string
@@ -1286,8 +1288,391 @@ exit 0
 
         if (str_contains($status, '⚠️')) {
             return 'warning';
-        } else {
-            return 'info';
         }
+
+        return 'info';
+    }
+
+    private function getPackageVersion(): string
+    {
+        $composerPath = base_path('vendor/forxer/bootstrap5-migrator/composer.json');
+
+        if (File::exists($composerPath)) {
+            $composer = json_decode(File::get($composerPath), true);
+
+            return $composer['version'] ?? 'dev-develop';
+        }
+
+        return 'dev-develop';
+    }
+
+    private function generateFileStats(): array
+    {
+        $stats = [
+            'total_files' => 0,
+            'by_type' => [],
+            'by_extension' => [],
+        ];
+
+        $paths = [
+            resource_path('views'),
+            resource_path('css'),
+            resource_path('sass'),
+            resource_path('scss'),
+            resource_path('js'),
+            public_path(),
+        ];
+
+        $typeMapping = [
+            'php' => 'template', 'blade.php' => 'template', 'html' => 'template', 'htm' => 'template',
+            'twig' => 'template', 'vue' => 'template',
+            'css' => 'style', 'scss' => 'style', 'sass' => 'style',
+            'js' => 'script', 'ts' => 'script',
+        ];
+
+        foreach ($paths as $path) {
+            if (is_dir($path)) {
+                $iterator = new RecursiveIteratorIterator(
+                    new RecursiveDirectoryIterator($path)
+                );
+
+                foreach ($iterator as $file) {
+                    if ($file->isFile()) {
+                        $stats['total_files']++;
+
+                        $filename = $file->getFilename();
+                        $extension = pathinfo((string) $filename, PATHINFO_EXTENSION);
+
+                        if (str_ends_with((string) $filename, '.blade.php')) {
+                            $extension = 'blade.php';
+                        }
+
+                        if (isset($typeMapping[$extension])) {
+                            $type = $typeMapping[$extension];
+                            $stats['by_type'][$type] = ($stats['by_type'][$type] ?? 0) + 1;
+                            $stats['by_extension'][$extension] = ($stats['by_extension'][$extension] ?? 0) + 1;
+                        }
+                    }
+                }
+            }
+        }
+
+        return $stats;
+    }
+
+    private function generateRecommendations(): array
+    {
+        return [
+            'Testez tous vos composants interactifs (modals, dropdowns, tooltips) après migration',
+            'Vérifiez le comportement des formulaires, particulièrement les contrôles customisés',
+            'Testez la responsivité sur différents appareils et tailles d\'écran',
+            'Si vous utilisez jQuery avec Bootstrap, évaluez la migration vers JavaScript vanilla',
+            'Considérez l\'utilisation de Bootstrap Icons pour remplacer les icônes obsolètes',
+            'Vérifiez vos surcharges CSS customisées et adaptez-les si nécessaire',
+            'Testez les plugins tiers pour s\'assurer de leur compatibilité avec Bootstrap 5',
+            'Consultez la documentation officielle Bootstrap 5 pour les cas complexes',
+            'Mettez à jour vos processus de build (Webpack, Vite) si nécessaire',
+            'Documentez les changements pour votre équipe de développement',
+        ];
+    }
+
+    private function generateMigrationChecklist(): array
+    {
+        return [
+            [
+                'title' => 'Mise à jour du package.json',
+                'description' => 'Bootstrap mis à jour vers la version 5.x et Popper.js remplacé par @popperjs/core',
+                'completed' => $this->isPackageJsonUpdated(),
+            ],
+            [
+                'title' => 'Migration des classes CSS',
+                'description' => 'Toutes les classes obsolètes ont été remplacées par leurs équivalents Bootstrap 5',
+                'completed' => $this->areClassesMigrated(),
+            ],
+            [
+                'title' => 'Mise à jour des attributs data-*',
+                'description' => 'Tous les attributs data-* ont été préfixés avec data-bs-',
+                'completed' => $this->areDataAttributesUpdated(),
+            ],
+            [
+                'title' => 'Migration des structures HTML',
+                'description' => 'Input groups, form groups et autres structures ont été simplifiées',
+                'completed' => $this->areStructuresMigrated(),
+            ],
+            [
+                'title' => 'Mise à jour des liens CDN',
+                'description' => 'Tous les liens CDN pointent vers Bootstrap 5',
+                'completed' => $this->areCDNLinksUpdated(),
+            ],
+            [
+                'title' => 'Tests des composants interactifs',
+                'description' => 'Modals, dropdowns, tooltips et autres composants fonctionnent correctement',
+                'completed' => false,
+            ],
+            [
+                'title' => 'Validation des formulaires',
+                'description' => 'Tous les formulaires et contrôles customisés fonctionnent comme attendu',
+                'completed' => false,
+            ],
+            [
+                'title' => 'Tests de responsivité',
+                'description' => 'Le design responsive fonctionne sur tous les appareils',
+                'completed' => false,
+            ],
+            [
+                'title' => 'Migration du code JavaScript',
+                'description' => 'Code jQuery Bootstrap migré vers l\'API JavaScript vanilla',
+                'completed' => $this->isJavaScriptMigrated(),
+            ],
+            [
+                'title' => 'Documentation mise à jour',
+                'description' => 'Documentation développeur et guides utilisateur mis à jour',
+                'completed' => false,
+            ],
+        ];
+    }
+
+    private function generateChecklistSection(array $checklist): string
+    {
+        $html = "
+        <div class='section'>
+            <h2>📋 Checklist de Migration</h2>
+            <p>Utilisez cette checklist pour vous assurer que tous les aspects de la migration ont été pris en compte :</p>
+            <ul class='checklist'>";
+
+        foreach ($checklist as $item) {
+            $checkboxClass = $item['completed'] ? 'checked' : '';
+            $html .= "
+            <li>
+                <div class='checkbox {$checkboxClass}'></div>
+                <div>
+                    <strong>{$item['title']}</strong>
+                    <br><small>{$item['description']}</small>
+                </div>
+            </li>";
+        }
+
+        return $html.'</ul></div>';
+    }
+
+    private function generateRecommendationsSection(array $recommendations): string
+    {
+        $html = "
+        <div class='section'>
+            <h2>💡 Recommandations</h2>
+            <div class='grid grid-2'>";
+
+        foreach ($recommendations as $index => $recommendation) {
+            $html .= "
+            <div class='card info'>
+                <strong>".($index + 1).".</strong> {$recommendation}
+            </div>";
+        }
+
+        return $html.'</div></div>';
+    }
+
+    private function getVersionStatus(string $version): string
+    {
+        if (str_contains($version, '4.')) {
+            return '🔄 Migration requise';
+        }
+
+        if (str_contains($version, '5.')) {
+            return '✅ Bootstrap 5 détecté';
+        }
+
+        return '❓ Version inconnue';
+    }
+
+    private function getSeverityBreakdown(array $classes): string
+    {
+        $high = \count(array_filter($classes, fn ($c): bool => $c['severity'] === 'high'));
+        $medium = \count(array_filter($classes, fn ($c): bool => $c['severity'] === 'medium'));
+        $low = \count(array_filter($classes, fn ($c): bool => $c['severity'] === 'low'));
+
+        $parts = [];
+
+        if ($high > 0) {
+            $parts[] = $high.' haute';
+        }
+
+        if ($medium > 0) {
+            $parts[] = $medium.' moyenne';
+        }
+
+        if ($low > 0) {
+            $parts[] = $low.' faible';
+        }
+
+        return implode(', ', $parts);
+    }
+
+    private function getSeverityCardClass(string $severity): string
+    {
+        return match ($severity) {
+            'high' => 'danger',
+            'medium' => 'warning',
+            'low' => 'success',
+            default => 'info'
+        };
+    }
+
+    private function getSeverityBadge(string $severity): string
+    {
+        $text = match ($severity) {
+            'high' => 'Haute',
+            'medium' => 'Moyenne',
+            'low' => 'Faible',
+            default => 'Info'
+        };
+
+        return \sprintf("<span class='badge badge-%s'>%s</span>", $severity, $text);
+    }
+
+    private function isPackageJsonUpdated(): bool
+    {
+        $packageJsonPath = base_path('package.json');
+
+        if (! File::exists($packageJsonPath)) {
+            return false;
+        }
+
+        $packageJson = json_decode(File::get($packageJsonPath), true);
+        $bootstrapVersion = $packageJson['dependencies']['bootstrap'] ?? $packageJson['devDependencies']['bootstrap'] ?? null;
+
+        return $bootstrapVersion && str_contains((string) $bootstrapVersion, '5.');
+    }
+
+    private function areClassesMigrated(): bool
+    {
+        $analysis = $this->classAnalyzer->findDeprecatedClasses();
+
+        return empty($analysis['classes']);
+    }
+
+    private function areDataAttributesUpdated(): bool
+    {
+        $files = $this->getAllTemplateFiles();
+        $oldAttributes = ['data-toggle=', 'data-target=', 'data-dismiss='];
+
+        foreach ($files as $file) {
+            $content = File::get($file);
+
+            foreach ($oldAttributes as $attr) {
+                if (str_contains($content, $attr)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private function areStructuresMigrated(): bool
+    {
+        $files = $this->getAllTemplateFiles();
+        $oldStructures = ['input-group-prepend', 'input-group-append', 'form-group'];
+
+        foreach ($files as $file) {
+            $content = File::get($file);
+
+            foreach ($oldStructures as $structure) {
+                if (str_contains($content, $structure)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private function areCDNLinksUpdated(): bool
+    {
+        $cdnLinks = $this->cdnAnalyzer->findCDNLinks();
+
+        return $cdnLinks === [];
+    }
+
+    private function isJavaScriptMigrated(): bool
+    {
+        $files = $this->getAllJavaScriptFiles();
+        $jqueryPatterns = [
+            '/\$\([^)]+\)\.modal\s*\(/',
+            '/\$\([^)]+\)\.dropdown\s*\(/',
+            '/\$\([^)]+\)\.tooltip\s*\(/',
+        ];
+
+        foreach ($files as $file) {
+            $content = File::get($file);
+
+            foreach ($jqueryPatterns as $pattern) {
+                if (preg_match($pattern, $content)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private function getAllTemplateFiles(): array
+    {
+        $files = [];
+        $paths = [resource_path('views'), public_path()];
+        $extensions = ['php', 'blade.php', 'html', 'htm', 'twig', 'vue'];
+
+        foreach ($paths as $path) {
+            if (is_dir($path)) {
+                $iterator = new RecursiveIteratorIterator(
+                    new RecursiveDirectoryIterator($path)
+                );
+
+                foreach ($iterator as $file) {
+                    if ($file->isFile()) {
+                        $filename = $file->getFilename();
+
+                        foreach ($extensions as $ext) {
+                            if (str_ends_with((string) $filename, $ext)) {
+                                $files[] = $file->getPathname();
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return $files;
+    }
+
+    private function getAllJavaScriptFiles(): array
+    {
+        $files = [];
+        $paths = [resource_path('js'), public_path('js')];
+        $extensions = ['js', 'ts'];
+
+        foreach ($paths as $path) {
+            if (is_dir($path)) {
+                $iterator = new RecursiveIteratorIterator(
+                    new RecursiveDirectoryIterator($path)
+                );
+
+                foreach ($iterator as $file) {
+                    if ($file->isFile()) {
+                        $filename = $file->getFilename();
+
+                        foreach ($extensions as $ext) {
+                            if (str_ends_with((string) $filename, $ext)) {
+                                $files[] = $file->getPathname();
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return $files;
     }
 }
