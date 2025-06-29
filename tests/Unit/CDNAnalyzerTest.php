@@ -108,10 +108,10 @@ class CDNAnalyzerTest extends TestCase
     /** @test */
     public function it_detects_cdn_links_across_multiple_files()
     {
-        File::put(resource_path('views/file1.blade.php'), 
+        File::put(resource_path('views/file1.blade.php'),
             '<link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" rel="stylesheet">');
-        
-        File::put(public_path('file2.html'), 
+
+        File::put(public_path('file2.html'),
             '<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.6.1/css/bootstrap.min.css" rel="stylesheet">');
 
         $results = $this->analyzer->findCDNLinks();
@@ -131,7 +131,7 @@ class CDNAnalyzerTest extends TestCase
 
         $this->assertNotEmpty($results);
         $suggestedLink = $results[0]['suggested_v5_link'];
-        
+
         $this->assertStringContains('5.3.2', $suggestedLink);
         $this->assertStringContains('cdn.jsdelivr.net', $suggestedLink);
         $this->assertStringNotContains('4.6.0', $suggestedLink);
@@ -144,7 +144,7 @@ class CDNAnalyzerTest extends TestCase
             'test.blade.php' => resource_path('views/test.blade.php'),
             'test.php' => resource_path('views/test.php'),
             'test.html' => public_path('test.html'),
-            'test.htm' => public_path('test.htm')
+            'test.htm' => public_path('test.htm'),
         ];
 
         $htmlContent = '<link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" rel="stylesheet">';
@@ -167,7 +167,7 @@ class CDNAnalyzerTest extends TestCase
         $results = $this->analyzer->findCDNLinks();
 
         $this->assertNotEmpty($results);
-        
+
         $result = $results[0];
         $this->assertArrayHasKey('file', $result);
         $this->assertArrayHasKey('provider', $result);
@@ -175,7 +175,7 @@ class CDNAnalyzerTest extends TestCase
         $this->assertArrayHasKey('current_version', $result);
         $this->assertArrayHasKey('suggested_v5_link', $result);
         $this->assertArrayHasKey('is_bootstrap_4', $result);
-        
+
         $this->assertIsString($result['file']);
         $this->assertIsString($result['provider']);
         $this->assertIsString($result['current_link']);
@@ -232,10 +232,10 @@ class CDNAnalyzerTest extends TestCase
         $results = $this->analyzer->findCDNLinks();
 
         $this->assertCount(2, $results);
-        
+
         $cssLink = collect($results)->firstWhere('current_link', 'like', '%css%');
         $jsLink = collect($results)->firstWhere('current_link', 'like', '%js%');
-        
+
         $this->assertNotNull($cssLink);
         $this->assertNotNull($jsLink);
     }
@@ -256,7 +256,7 @@ class CDNAnalyzerTest extends TestCase
     {
         $directories = [
             resource_path('views'),
-            public_path()
+            public_path(),
         ];
 
         foreach ($directories as $dir) {
@@ -284,7 +284,7 @@ class CDNAnalyzerTest extends TestCase
             public_path('cloudflare.html'),
             public_path('file2.html'),
             public_path('test.html'),
-            public_path('test.htm')
+            public_path('test.htm'),
         ];
 
         foreach ($testFiles as $file) {
@@ -296,7 +296,7 @@ class CDNAnalyzerTest extends TestCase
         // Clean up empty directories
         $emptyDirs = [
             resource_path('views/empty'),
-            public_path('empty')
+            public_path('empty'),
         ];
 
         foreach ($emptyDirs as $dir) {

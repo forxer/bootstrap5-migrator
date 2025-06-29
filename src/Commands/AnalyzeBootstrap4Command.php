@@ -6,9 +6,7 @@ use Bootstrap5Migrator\Analyzers\CDNAnalyzer;
 use Bootstrap5Migrator\Analyzers\DeprecatedClassAnalyzer;
 use Bootstrap5Migrator\Analyzers\SpecialCaseAnalyzer;
 use Bootstrap5Migrator\Bootstrap5Migrator;
-use Bootstrap5Migrator\Services\FileProcessorService;
-use Bootstrap5Migrator\Services\ProgressService;
-use Bootstrap5Migrator\Services\CacheService;
+use Bootstrap5Migrator\Traits\UsesPerformanceServices;
 use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
@@ -17,6 +15,8 @@ use RecursiveIteratorIterator;
 
 class AnalyzeBootstrap4Command extends Command
 {
+    use UsesPerformanceServices;
+
     protected $signature = 'bootstrap:analyze
                             {--format=table : Format de sortie (table, json, html)}
                             {--export= : Exporter vers un fichier}
@@ -32,20 +32,17 @@ class AnalyzeBootstrap4Command extends Command
         CDNAnalyzer $cdnAnalyzer,
         SpecialCaseAnalyzer $specialAnalyzer
     ): int {
-        // Initialiser les services de performance
-        $progress = new ProgressService($this->output);
-        $cache = new CacheService();
-        $fileProcessor = new FileProcessorService();
-        
-        $useCache = !$this->option('no-cache');
+        $this->initializePerformanceServices();
+
+        $useCache = ! $this->option('no-cache');
         $useParallel = $this->option('parallel');
-        
+
         if ($useCache) {
-            $progress->info('Cache activé - les analyses précédentes seront réutilisées');
+            $this->info('Cache activé - les analyses précédentes seront réutilisées');
         }
-        
+
         if ($useParallel) {
-            $progress->info('Mode parallèle activé pour de meilleures performances');
+            $this->info('Mode parallèle activé pour de meilleures performances');
         }
 
         // Démarrer l'analyse avec progression multi-étapes
@@ -55,10 +52,10 @@ class AnalyzeBootstrap4Command extends Command
             ['title' => 'Liens CDN', 'description' => 'Détection des liens CDN Bootstrap 4'],
             ['title' => 'Cas spéciaux', 'description' => 'Identification des cas complexes'],
             ['title' => 'Statistiques fichiers', 'description' => 'Analyse de la structure du projet'],
-            ['title' => 'Génération rapport', 'description' => 'Compilation des résultats']
+            ['title' => 'Génération rapport', 'description' => 'Compilation des résultats'],
         ];
 
-        $multiStep = $progress->multiStep($steps);
+        $multiStep = $this->progressService->multiStep($steps);
         $multiStep->start();
 
         $analysis = [
@@ -74,6 +71,9 @@ class AnalyzeBootstrap4Command extends Command
         if ($this->option('export')) {
             $this->exportAnalysis($analysis, $this->option('export'));
         }
+
+        $this->displayPerformanceStats();
+        $this->cleanupPerformanceServices();
 
         return 0;
     }

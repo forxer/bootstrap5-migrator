@@ -2,23 +2,29 @@
 
 namespace Bootstrap5Migrator\Services;
 
+use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
-use SplFileInfo;
 
 class FileProcessorService
 {
     protected int $chunkSize;
+
     protected int $memoryLimit;
+
     protected array $processedFiles = [];
+
     protected array $stats = [];
 
-    public function __construct(int $chunkSize = 100, int $memoryLimit = 128)
+    protected array $config;
+
+    public function __construct()
     {
-        $this->chunkSize = $chunkSize;
-        $this->memoryLimit = $memoryLimit * 1024 * 1024; // Convert MB to bytes
+        $this->config = config('bootstrap5-migrator', []);
+        $this->chunkSize = $this->config['performance']['chunk_size'] ?? 100;
+        $this->memoryLimit = ($this->config['performance']['memory_limit'] ?? 128) * 1024 * 1024;
     }
 
     /**
@@ -27,7 +33,7 @@ class FileProcessorService
     public function processFilesInChunks(array $directories, array $extensions, callable $processor): array
     {
         $allFiles = $this->gatherFiles($directories, $extensions);
-        $totalFiles = count($allFiles);
+        $totalFiles = \count($allFiles);
         $chunks = array_chunk($allFiles, $this->chunkSize);
         $results = [];
 
@@ -35,18 +41,18 @@ class FileProcessorService
 
         foreach ($chunks as $chunkIndex => $chunk) {
             $this->checkMemoryUsage();
-            
-            $chunkResults = $this->processChunk($chunk, $processor, $chunkIndex + 1, count($chunks));
+
+            $chunkResults = $this->processChunk($chunk, $processor, $chunkIndex + 1, \count($chunks));
             $results = array_merge($results, $chunkResults);
-            
+
             // Force garbage collection après chaque chunk
-            if (function_exists('gc_collect_cycles')) {
+            if (\function_exists('gc_collect_cycles')) {
                 gc_collect_cycles();
             }
         }
 
         $this->finalizeStats();
-        
+
         return $results;
     }
 
@@ -56,10 +62,10 @@ class FileProcessorService
     protected function gatherFiles(array $directories, array $extensions): array
     {
         $files = [];
-        $extensionPattern = '/\.(' . implode('|', array_map('preg_quote', $extensions)) . ')$/i';
+        $extensionPattern = '/\.('.implode('|', array_map('preg_quote', $extensions)).')$/i';
 
         foreach ($directories as $directory) {
-            if (!is_dir($directory)) {
+            if (! is_dir($directory)) {
                 continue;
             }
 
@@ -70,11 +76,11 @@ class FileProcessorService
                 );
 
                 foreach ($iterator as $file) {
-                    if ($file->isFile() && preg_match($extensionPattern, $file->getFilename())) {
+                    if ($file->isFile() && preg_match($extensionPattern, (string) $file->getFilename())) {
                         $files[] = $file->getPathname();
                     }
                 }
-            } catch (\Exception $e) {
+            } catch (Exception) {
                 // Log error but continue processing
                 continue;
             }
@@ -93,29 +99,35 @@ class FileProcessorService
 
         foreach ($files as $file) {
             try {
-                if (!File::exists($file) || !File::isReadable($file)) {
+                if (! File::exists($file) || ! File::isReadable($file)) {
                     $this->stats['skipped']++;
+
                     continue;
                 }
 
                 $fileSize = File::size($file);
-                
-                // Skip très gros fichiers (> 5MB) pour éviter les problèmes de mémoire
-                if ($fileSize > 5 * 1024 * 1024) {
+
+                // Skip très gros fichiers pour éviter les problèmes de mémoire
+                $maxFileSize = ($this->config['performance']['max_file_size'] ?? 5) * 1024 * 1024;
+
+                if ($fileSize > $maxFileSize) {
                     $this->stats['too_large']++;
+
                     continue;
                 }
 
                 $result = $processor($file);
+
                 if ($result !== null) {
                     $results[] = $result;
                 }
-                
+
                 $this->stats['processed']++;
                 $this->processedFiles[] = $file;
 
-            } catch (\Exception $e) {
+            } catch (Exception) {
                 $this->stats['errors']++;
+
                 // Log error mais continue
                 continue;
             }
@@ -139,28 +151,27 @@ class FileProcessorService
         $this->stats['memory']['peak'] = max($this->stats['memory']['peak'] ?? 0, $peakUsage);
 
         // Si on approche de la limite, force garbage collection
-        if ($currentUsage > ($this->memoryLimit * 0.8)) {
-            if (function_exists('gc_collect_cycles')) {
-                gc_collect_cycles();
-            }
+        if ($currentUsage > $this->memoryLimit * 0.8 && \function_exists('gc_collect_cycles')) {
+            gc_collect_cycles();
         }
     }
 
     /**
      * Traitement parallèle pour les gros projets (si disponible)
      */
-    public function processFilesInParallel(array $directories, array $extensions, callable $processor, int $workers = 4): array
+    public function processFilesInParallel(array $directories, array $extensions, callable $processor): array
     {
         // Fallback vers traitement séquentiel si pas de support parallèle
-        if (!function_exists('pcntl_fork')) {
+        if (! \function_exists('pcntl_fork')) {
             return $this->processFilesInChunks($directories, $extensions, $processor);
         }
 
+        $workers = $this->config['performance']['max_workers'] ?? 4;
         $allFiles = $this->gatherFiles($directories, $extensions);
-        $chunks = array_chunk($allFiles, ceil(count($allFiles) / $workers));
+        $chunks = array_chunk($allFiles, ceil(\count($allFiles) / $workers));
         $results = [];
 
-        // Pour le moment, implémentation séquentielle 
+        // Pour le moment, implémentation séquentielle
         // L'implémentation parallèle nécessiterait une gestion plus complexe des processus
         foreach ($chunks as $chunk) {
             $chunkResults = $this->processChunk($chunk, $processor, 1, 1);
@@ -177,7 +188,7 @@ class FileProcessorService
     {
         static $cache = [];
         static $cacheSize = 0;
-        const MAX_CACHE_SIZE = 50 * 1024 * 1024; // 50MB max cache
+        $maxCacheSize = 50 * 1024 * 1024; // 50MB max cache
 
         // Vérification cache
         if (isset($cache[$filePath])) {
@@ -186,17 +197,17 @@ class FileProcessorService
 
         try {
             $content = File::get($filePath);
-            $contentSize = strlen($content);
+            $contentSize = \strlen($content);
 
             // Mise en cache seulement pour les petits fichiers
-            if ($contentSize < 1024 * 1024 && ($cacheSize + $contentSize) < MAX_CACHE_SIZE) {
+            if ($contentSize < 1024 * 1024 && ($cacheSize + $contentSize) < $maxCacheSize) {
                 $cache[$filePath] = $content;
                 $cacheSize += $contentSize;
             }
 
             return $content;
 
-        } catch (\Exception $e) {
+        } catch (Exception) {
             return null;
         }
     }
@@ -206,19 +217,20 @@ class FileProcessorService
      */
     public function filterRelevantFiles(array $files, array $patterns = []): array
     {
-        if (empty($patterns)) {
+        if ($patterns === []) {
             return $files;
         }
 
-        return array_filter($files, function ($file) use ($patterns) {
+        return array_filter($files, function ($file) use ($patterns): bool {
             $content = $this->readFileOptimized($file);
+
             if ($content === null) {
                 return false;
             }
 
             // Quick scan pour voir si le fichier contient des patterns pertinents
             foreach ($patterns as $pattern) {
-                if (stripos($content, $pattern) !== false) {
+                if (stripos($content, (string) $pattern) !== false) {
                     return true;
                 }
             }
@@ -242,9 +254,9 @@ class FileProcessorService
             'memory' => [
                 'start' => memory_get_usage(true),
                 'peak' => 0,
-                'current' => 0
+                'current' => 0,
             ],
-            'chunk_times' => []
+            'chunk_times' => [],
         ];
     }
 
@@ -256,9 +268,9 @@ class FileProcessorService
         $this->stats['end_time'] = microtime(true);
         $this->stats['total_time'] = $this->stats['end_time'] - $this->stats['start_time'];
         $this->stats['memory']['end'] = memory_get_usage(true);
-        $this->stats['average_chunk_time'] = !empty($this->stats['chunk_times']) 
-            ? array_sum($this->stats['chunk_times']) / count($this->stats['chunk_times'])
-            : 0;
+        $this->stats['average_chunk_time'] = empty($this->stats['chunk_times'])
+            ? 0
+            : array_sum($this->stats['chunk_times']) / \count($this->stats['chunk_times']);
     }
 
     /**
@@ -284,8 +296,8 @@ class FileProcessorService
     {
         $this->processedFiles = [];
         $this->stats = [];
-        
-        if (function_exists('gc_collect_cycles')) {
+
+        if (\function_exists('gc_collect_cycles')) {
             gc_collect_cycles();
         }
     }
@@ -295,7 +307,7 @@ class FileProcessorService
      */
     public function formatStats(): array
     {
-        if (empty($this->stats)) {
+        if ($this->stats === []) {
             return [];
         }
 
@@ -304,12 +316,12 @@ class FileProcessorService
             'files_skipped' => $this->stats['skipped'],
             'files_errors' => $this->stats['errors'],
             'files_too_large' => $this->stats['too_large'],
-            'total_time' => round($this->stats['total_time'], 2) . 's',
-            'average_chunk_time' => round($this->stats['average_chunk_time'], 3) . 's',
+            'total_time' => round($this->stats['total_time'], 2).'s',
+            'average_chunk_time' => round($this->stats['average_chunk_time'], 3).'s',
             'memory_used' => $this->formatBytes($this->stats['memory']['peak']),
-            'files_per_second' => $this->stats['total_time'] > 0 
+            'files_per_second' => $this->stats['total_time'] > 0
                 ? round($this->stats['processed'] / $this->stats['total_time'], 1)
-                : 0
+                : 0,
         ];
     }
 
@@ -321,10 +333,10 @@ class FileProcessorService
         $units = ['B', 'KB', 'MB', 'GB'];
         $bytes = max($bytes, 0);
         $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
-        $pow = min($pow, count($units) - 1);
+        $pow = min($pow, \count($units) - 1);
 
         $bytes /= 1024 ** $pow;
 
-        return round($bytes, 2) . ' ' . $units[$pow];
+        return round($bytes, 2).' '.$units[$pow];
     }
 }

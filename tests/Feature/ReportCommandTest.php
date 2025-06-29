@@ -43,11 +43,11 @@ class ReportCommandTest extends TestCase
 
         $this->artisan('bootstrap:report', [
             '--format' => 'html',
-            '--output' => $customPath
+            '--output' => $customPath,
         ])->assertExitCode(0);
 
         $this->assertFileExists($customPath);
-        
+
         // Vérifier que c'est du HTML valide
         $content = File::get($customPath);
         $this->assertStringContains('<html', $content);
@@ -61,11 +61,11 @@ class ReportCommandTest extends TestCase
 
         $this->artisan('bootstrap:report', [
             '--format' => 'markdown',
-            '--output' => $markdownPath
+            '--output' => $markdownPath,
         ])->assertExitCode(0);
 
         $this->assertFileExists($markdownPath);
-        
+
         // Vérifier que c'est du Markdown valide
         $content = File::get($markdownPath);
         $this->assertStringContains('# 📊 Rapport de Migration Bootstrap 5', $content);
@@ -79,7 +79,7 @@ class ReportCommandTest extends TestCase
 
         $this->artisan('bootstrap:report', [
             '--format' => 'pdf',
-            '--output' => $pdfPath
+            '--output' => $pdfPath,
         ])->expectsOutputToContain('PDF')
             ->assertExitCode(0);
 
@@ -98,11 +98,11 @@ class ReportCommandTest extends TestCase
 
         $this->artisan('bootstrap:report', [
             '--format' => 'html',
-            '--output' => $reportPath
+            '--output' => $reportPath,
         ])->assertExitCode(0);
 
         $content = File::get($reportPath);
-        
+
         // Vérifier que toutes les sections sont présentes
         $this->assertStringContains('Score de Migration', $content);
         $this->assertStringContains('Classes obsolètes', $content);
@@ -120,18 +120,18 @@ class ReportCommandTest extends TestCase
 
         $this->artisan('bootstrap:report', [
             '--comparison',
-            '--before-data' => $beforePath
+            '--before-data' => $beforePath,
         ])->expectsOutputToContain('Rapport de comparaison')
-          ->assertExitCode(0);
+            ->assertExitCode(0);
     }
 
     /** @test */
     public function it_generates_performance_report()
     {
         $this->artisan('bootstrap:report', [
-            '--performance'
+            '--performance',
         ])->expectsOutputToContain('Rapport de performance')
-          ->assertExitCode(0);
+            ->assertExitCode(0);
 
         $performancePath = storage_path('app/bootstrap-migration-reports/performance-report.html');
         $this->assertFileExists($performancePath);
@@ -141,13 +141,13 @@ class ReportCommandTest extends TestCase
     public function it_generates_monitoring_script()
     {
         $this->artisan('bootstrap:report', [
-            '--monitoring-script'
+            '--monitoring-script',
         ])->expectsOutputToContain('Script de surveillance')
-          ->assertExitCode(0);
+            ->assertExitCode(0);
 
         $scriptPath = base_path('monitor-bootstrap.sh');
         $this->assertFileExists($scriptPath);
-        
+
         // Vérifier que c'est un script bash exécutable
         $content = File::get($scriptPath);
         $this->assertStringStartsWith('#!/bin/bash', $content);
@@ -158,23 +158,23 @@ class ReportCommandTest extends TestCase
     public function it_warns_about_missing_screenshots_dependency()
     {
         $this->artisan('bootstrap:report', [
-            '--include-screenshots'
+            '--include-screenshots',
         ])->expectsOutputToContain('Puppeteer')
-          ->expectsOutputToContain('npm install')
-          ->assertExitCode(0);
+            ->expectsOutputToContain('npm install')
+            ->assertExitCode(0);
     }
 
     /** @test */
     public function it_creates_output_directory_if_missing()
     {
         $deepPath = storage_path('deep/nested/path/report.html');
-        
+
         $this->artisan('bootstrap:report', [
-            '--output' => $deepPath
+            '--output' => $deepPath,
         ])->assertExitCode(0);
 
         $this->assertFileExists($deepPath);
-        $this->assertDirectoryExists(dirname($deepPath));
+        $this->assertDirectoryExists(\dirname($deepPath));
     }
 
     /** @test */
@@ -183,11 +183,11 @@ class ReportCommandTest extends TestCase
         $reportPath = storage_path('meta-report.html');
 
         $this->artisan('bootstrap:report', [
-            '--output' => $reportPath
+            '--output' => $reportPath,
         ])->assertExitCode(0);
 
         $content = File::get($reportPath);
-        
+
         // Vérifier les méta-informations
         $this->assertStringContains('Laravel', $content);
         $this->assertStringContains('PHP', $content);
@@ -200,7 +200,7 @@ class ReportCommandTest extends TestCase
         $reportPath = storage_path('checklist-report.html');
 
         $this->artisan('bootstrap:report', [
-            '--output' => $reportPath
+            '--output' => $reportPath,
         ])->assertExitCode(0);
 
         $content = File::get($reportPath);
@@ -215,7 +215,7 @@ class ReportCommandTest extends TestCase
         $reportPath = storage_path('recommendations-report.html');
 
         $this->artisan('bootstrap:report', [
-            '--output' => $reportPath
+            '--output' => $reportPath,
         ])->assertExitCode(0);
 
         $content = File::get($reportPath);
@@ -253,11 +253,11 @@ class ReportCommandTest extends TestCase
 
         $this->artisan('bootstrap:report', [
             '--format' => 'markdown',
-            '--output' => $markdownPath
+            '--output' => $markdownPath,
         ])->assertExitCode(0);
 
         $content = File::get($markdownPath);
-        
+
         // Vérifier la structure Markdown
         $this->assertStringContains('# 📊 Rapport de Migration Bootstrap 5', $content);
         $this->assertStringContains('## 🎯 Score de Migration', $content);
@@ -274,7 +274,7 @@ class ReportCommandTest extends TestCase
             resource_path('css'),
             resource_path('js'),
             storage_path('app'),
-            storage_path('app/bootstrap-migration-reports')
+            storage_path('app/bootstrap-migration-reports'),
         ];
 
         foreach ($directories as $dir) {
@@ -285,8 +285,8 @@ class ReportCommandTest extends TestCase
         $packageJson = [
             'name' => 'test-project',
             'dependencies' => [
-                'bootstrap' => '^4.6.0'
-            ]
+                'bootstrap' => '^4.6.0',
+            ],
         ];
         File::put(base_path('package.json'), json_encode($packageJson, JSON_PRETTY_PRINT));
     }
@@ -294,16 +294,16 @@ class ReportCommandTest extends TestCase
     private function createAnalysisData(): void
     {
         // Créer des fichiers avec différents types de problèmes
-        File::put(resource_path('views/deprecated.blade.php'), 
+        File::put(resource_path('views/deprecated.blade.php'),
             '<div class="ml-2 text-left badge-primary">Deprecated classes</div>');
-        
-        File::put(resource_path('views/data-attrs.blade.php'), 
+
+        File::put(resource_path('views/data-attrs.blade.php'),
             '<button data-toggle="modal" data-target="#modal">Old attributes</button>');
-        
-        File::put(public_path('cdn.html'), 
+
+        File::put(public_path('cdn.html'),
             '<link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" rel="stylesheet">');
-        
-        File::put(resource_path('js/jquery.js'), 
+
+        File::put(resource_path('js/jquery.js'),
             '$(".modal").modal("show");');
     }
 
@@ -321,7 +321,7 @@ class ReportCommandTest extends TestCase
             storage_path('checklist-report.html'),
             storage_path('recommendations-report.html'),
             storage_path('structured-report.md'),
-            storage_path('before.json')
+            storage_path('before.json'),
         ];
 
         foreach ($testFiles as $file) {
@@ -337,6 +337,7 @@ class ReportCommandTest extends TestCase
 
         // Nettoyer les fichiers de test générés en masse
         $testViews = File::glob(resource_path('views/file*.blade.php'));
+
         foreach ($testViews as $file) {
             File::delete($file);
         }
@@ -345,7 +346,7 @@ class ReportCommandTest extends TestCase
             resource_path('views/deprecated.blade.php'),
             resource_path('views/data-attrs.blade.php'),
             resource_path('js/jquery.js'),
-            public_path('cdn.html')
+            public_path('cdn.html'),
         ];
 
         foreach ($testFiles as $file) {

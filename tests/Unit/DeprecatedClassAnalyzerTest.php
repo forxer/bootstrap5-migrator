@@ -26,7 +26,7 @@ class DeprecatedClassAnalyzerTest extends TestCase
     /** @test */
     public function it_detects_margin_left_classes()
     {
-        File::put(resource_path('views/margins.blade.php'), 
+        File::put(resource_path('views/margins.blade.php'),
             '<div class="ml-2 ml-auto">Margins</div>');
 
         $results = $this->analyzer->findDeprecatedClasses();
@@ -41,7 +41,7 @@ class DeprecatedClassAnalyzerTest extends TestCase
     /** @test */
     public function it_detects_margin_right_classes()
     {
-        File::put(resource_path('views/margins.blade.php'), 
+        File::put(resource_path('views/margins.blade.php'),
             '<div class="mr-1 mr-3 mr-5">Margins</div>');
 
         $results = $this->analyzer->findDeprecatedClasses();
@@ -57,7 +57,7 @@ class DeprecatedClassAnalyzerTest extends TestCase
     /** @test */
     public function it_detects_padding_classes()
     {
-        File::put(resource_path('views/padding.blade.php'), 
+        File::put(resource_path('views/padding.blade.php'),
             '<div class="pl-0 pr-4">Padding</div>');
 
         $results = $this->analyzer->findDeprecatedClasses();
@@ -71,7 +71,7 @@ class DeprecatedClassAnalyzerTest extends TestCase
     /** @test */
     public function it_detects_text_alignment_classes()
     {
-        File::put(resource_path('views/text.blade.php'), 
+        File::put(resource_path('views/text.blade.php'),
             '<div class="text-left text-right">Text alignment</div>');
 
         $results = $this->analyzer->findDeprecatedClasses();
@@ -86,7 +86,7 @@ class DeprecatedClassAnalyzerTest extends TestCase
     /** @test */
     public function it_detects_form_classes()
     {
-        File::put(resource_path('views/forms.blade.php'), 
+        File::put(resource_path('views/forms.blade.php'),
             '<div class="form-group"><select class="custom-select"></select></div>');
 
         $results = $this->analyzer->findDeprecatedClasses();
@@ -101,7 +101,7 @@ class DeprecatedClassAnalyzerTest extends TestCase
     /** @test */
     public function it_detects_badge_classes()
     {
-        File::put(resource_path('views/badges.blade.php'), 
+        File::put(resource_path('views/badges.blade.php'),
             '<span class="badge badge-primary badge-warning badge-dark">Badges</span>');
 
         $results = $this->analyzer->findDeprecatedClasses();
@@ -117,7 +117,7 @@ class DeprecatedClassAnalyzerTest extends TestCase
     /** @test */
     public function it_detects_removed_components()
     {
-        File::put(resource_path('views/removed.blade.php'), 
+        File::put(resource_path('views/removed.blade.php'),
             '<div class="jumbotron media"><div class="media-object"></div></div>');
 
         $results = $this->analyzer->findDeprecatedClasses();
@@ -134,7 +134,7 @@ class DeprecatedClassAnalyzerTest extends TestCase
     /** @test */
     public function it_detects_screen_reader_classes()
     {
-        File::put(resource_path('views/sr.blade.php'), 
+        File::put(resource_path('views/sr.blade.php'),
             '<span class="sr-only sr-only-focusable">Screen reader</span>');
 
         $results = $this->analyzer->findDeprecatedClasses();
@@ -148,7 +148,7 @@ class DeprecatedClassAnalyzerTest extends TestCase
     /** @test */
     public function it_detects_close_button_class()
     {
-        File::put(resource_path('views/close.blade.php'), 
+        File::put(resource_path('views/close.blade.php'),
             '<button class="close">×</button>');
 
         $results = $this->analyzer->findDeprecatedClasses();
@@ -161,7 +161,7 @@ class DeprecatedClassAnalyzerTest extends TestCase
     /** @test */
     public function it_counts_class_occurrences()
     {
-        File::put(resource_path('views/count.blade.php'), 
+        File::put(resource_path('views/count.blade.php'),
             '<div class="ml-2">First</div><div class="ml-2">Second</div>');
 
         $results = $this->analyzer->findDeprecatedClasses();
@@ -187,7 +187,7 @@ class DeprecatedClassAnalyzerTest extends TestCase
     /** @test */
     public function it_provides_detailed_locations_when_requested()
     {
-        File::put(resource_path('views/detailed.blade.php'), 
+        File::put(resource_path('views/detailed.blade.php'),
             "Line 1\n<div class=\"ml-2\">Line 2</div>\nLine 3");
 
         $results = $this->analyzer->findDeprecatedClasses(true);
@@ -195,7 +195,7 @@ class DeprecatedClassAnalyzerTest extends TestCase
         $this->assertArrayHasKey('ml-2', $results['classes']);
         $this->assertArrayHasKey('locations', $results['classes']['ml-2']);
         $this->assertNotEmpty($results['classes']['ml-2']['locations']);
-        
+
         $location = $results['classes']['ml-2']['locations'][0];
         $this->assertArrayHasKey('line', $location);
         $this->assertArrayHasKey('content', $location);
@@ -206,7 +206,7 @@ class DeprecatedClassAnalyzerTest extends TestCase
     /** @test */
     public function it_detects_classes_in_css_files()
     {
-        File::put(resource_path('css/app.css'), 
+        File::put(resource_path('css/app.css'),
             '.my-component .ml-2 { color: red; }');
 
         $results = $this->analyzer->findDeprecatedClasses();
@@ -217,7 +217,7 @@ class DeprecatedClassAnalyzerTest extends TestCase
     /** @test */
     public function it_detects_classes_in_scss_files()
     {
-        File::put(resource_path('sass/app.scss'), 
+        File::put(resource_path('sass/app.scss'),
             '.navbar { .text-left { font-weight: bold; } }');
 
         $results = $this->analyzer->findDeprecatedClasses();
@@ -228,7 +228,7 @@ class DeprecatedClassAnalyzerTest extends TestCase
     /** @test */
     public function it_provides_correct_summary_statistics()
     {
-        File::put(resource_path('views/summary.blade.php'), 
+        File::put(resource_path('views/summary.blade.php'),
             '<div class="jumbotron form-group ml-2">Mixed severities</div>');
 
         $results = $this->analyzer->findDeprecatedClasses();
@@ -243,7 +243,7 @@ class DeprecatedClassAnalyzerTest extends TestCase
     /** @test */
     public function it_ignores_partial_matches()
     {
-        File::put(resource_path('views/partial.blade.php'), 
+        File::put(resource_path('views/partial.blade.php'),
             '<div class="my-ml-2-custom some-text-left-thing">Partial matches</div>');
 
         $results = $this->analyzer->findDeprecatedClasses();
@@ -254,7 +254,7 @@ class DeprecatedClassAnalyzerTest extends TestCase
     /** @test */
     public function it_handles_single_and_double_quotes()
     {
-        File::put(resource_path('views/quotes.blade.php'), 
+        File::put(resource_path('views/quotes.blade.php'),
             '<div class="ml-2" data-class=\'text-left\'>Quotes</div>');
 
         $results = $this->analyzer->findDeprecatedClasses();
@@ -267,6 +267,7 @@ class DeprecatedClassAnalyzerTest extends TestCase
     public function it_detects_all_margin_and_padding_variants()
     {
         $classes = [];
+
         for ($i = 0; $i <= 5; $i++) {
             $classes[] = "ml-{$i}";
             $classes[] = "mr-{$i}";
@@ -276,7 +277,7 @@ class DeprecatedClassAnalyzerTest extends TestCase
         $classes[] = 'ml-auto';
         $classes[] = 'mr-auto';
 
-        $html = '<div class="' . implode(' ', $classes) . '">All variants</div>';
+        $html = '<div class="'.implode(' ', $classes).'">All variants</div>';
         File::put(resource_path('views/variants.blade.php'), $html);
 
         $results = $this->analyzer->findDeprecatedClasses();
@@ -289,7 +290,7 @@ class DeprecatedClassAnalyzerTest extends TestCase
     /** @test */
     public function it_handles_multiline_class_attributes()
     {
-        File::put(resource_path('views/multiline.blade.php'), 
+        File::put(resource_path('views/multiline.blade.php'),
             '<div class="
                 ml-2
                 text-left
@@ -306,7 +307,7 @@ class DeprecatedClassAnalyzerTest extends TestCase
     /** @test */
     public function it_handles_files_without_deprecated_classes()
     {
-        File::put(resource_path('views/clean.blade.php'), 
+        File::put(resource_path('views/clean.blade.php'),
             '<div class="ms-2 text-start bg-primary">Clean Bootstrap 5</div>');
 
         $results = $this->analyzer->findDeprecatedClasses();
@@ -320,7 +321,7 @@ class DeprecatedClassAnalyzerTest extends TestCase
         $directories = [
             resource_path('views'),
             resource_path('css'),
-            resource_path('sass')
+            resource_path('sass'),
         ];
 
         foreach ($directories as $dir) {
@@ -350,7 +351,7 @@ class DeprecatedClassAnalyzerTest extends TestCase
             resource_path('views/multiline.blade.php'),
             resource_path('views/clean.blade.php'),
             resource_path('css/app.css'),
-            resource_path('sass/app.scss')
+            resource_path('sass/app.scss'),
         ];
 
         foreach ($testFiles as $file) {

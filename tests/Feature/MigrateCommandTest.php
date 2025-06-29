@@ -52,8 +52,8 @@ class MigrateCommandTest extends TestCase
         $packageJson = [
             'dependencies' => [
                 'bootstrap' => '^4.6.0',
-                'popper.js' => '^1.16.1'
-            ]
+                'popper.js' => '^1.16.1',
+            ],
         ];
         File::put(base_path('package.json'), json_encode($packageJson, JSON_PRETTY_PRINT));
 
@@ -119,8 +119,8 @@ class MigrateCommandTest extends TestCase
         $packageJson = [
             'dependencies' => [
                 'bootstrap' => '^4.6.0',
-                'jquery' => '^3.6.0'
-            ]
+                'jquery' => '^3.6.0',
+            ],
         ];
         File::put(base_path('package.json'), json_encode($packageJson, JSON_PRETTY_PRINT));
 
@@ -201,7 +201,7 @@ class MigrateCommandTest extends TestCase
             resource_path('css'),
             resource_path('sass'),
             resource_path('js'),
-            storage_path('app')
+            storage_path('app'),
         ];
 
         foreach ($directories as $dir) {
@@ -212,8 +212,8 @@ class MigrateCommandTest extends TestCase
         $packageJson = [
             'name' => 'test-project',
             'dependencies' => [
-                'bootstrap' => '^4.6.0'
-            ]
+                'bootstrap' => '^4.6.0',
+            ],
         ];
         File::put(base_path('package.json'), json_encode($packageJson, JSON_PRETTY_PRINT));
     }
@@ -229,7 +229,7 @@ class MigrateCommandTest extends TestCase
             resource_path('views/input-group.blade.php'),
             resource_path('css/app.css'),
             resource_path('sass/app.scss'),
-            resource_path('js/app.js')
+            resource_path('js/app.js'),
         ];
 
         foreach ($testFiles as $file) {
@@ -240,6 +240,7 @@ class MigrateCommandTest extends TestCase
 
         // Nettoyer les backups
         $backupDirs = File::glob(base_path('bootstrap-migration-backup-*'));
+
         foreach ($backupDirs as $dir) {
             File::deleteDirectory($dir);
         }

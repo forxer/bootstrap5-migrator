@@ -6,6 +6,9 @@ use Bootstrap5Migrator\Commands\AnalyzeBootstrap4Command;
 use Bootstrap5Migrator\Commands\GenerateReportCommand;
 use Bootstrap5Migrator\Commands\MigrateToBootstrap5Command;
 use Bootstrap5Migrator\Commands\ValidateBootstrap5Command;
+use Bootstrap5Migrator\Services\CacheService;
+use Bootstrap5Migrator\Services\FileProcessorService;
+use Bootstrap5Migrator\Services\ProgressService;
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
 
 class ServiceProvider extends BaseServiceProvider
@@ -16,7 +19,13 @@ class ServiceProvider extends BaseServiceProvider
             __DIR__.'/../config/bootstrap5-migrator.php', 'bootstrap5-migrator'
         );
 
+        // Core services
         $this->app->singleton(Bootstrap5Migrator::class);
+
+        // Performance services
+        $this->app->singleton(CacheService::class);
+        $this->app->singleton(FileProcessorService::class);
+        $this->app->bind(ProgressService::class);
     }
 
     public function boot(): void

@@ -42,15 +42,15 @@ class AnalyzeCommandTest extends TestCase
 
         $this->artisan('bootstrap:analyze', [
             '--export' => $exportPath,
-            '--format' => 'json'
+            '--format' => 'json',
         ])->assertExitCode(0);
 
         $this->assertFileExists($exportPath);
-        
+
         $data = json_decode(File::get($exportPath), true);
         $this->assertArrayHasKey('analysis', $data);
         $this->assertArrayHasKey('deprecated_classes', $data['analysis']);
-        
+
         File::delete($exportPath);
     }
 
@@ -91,8 +91,8 @@ class AnalyzeCommandTest extends TestCase
         // Créer package.json avec Bootstrap 4
         $packageJson = [
             'dependencies' => [
-                'bootstrap' => '^4.6.0'
-            ]
+                'bootstrap' => '^4.6.0',
+            ],
         ];
         File::put(base_path('package.json'), json_encode($packageJson, JSON_PRETTY_PRINT));
 
@@ -108,8 +108,8 @@ class AnalyzeCommandTest extends TestCase
         $packageJson = [
             'dependencies' => [
                 'bootstrap' => '^4.6.0',
-                'jquery' => '^3.6.0'
-            ]
+                'jquery' => '^3.6.0',
+            ],
         ];
         File::put(base_path('package.json'), json_encode($packageJson, JSON_PRETTY_PRINT));
 
@@ -146,25 +146,25 @@ class AnalyzeCommandTest extends TestCase
     public function it_exports_to_different_formats()
     {
         $exportPath = storage_path('test-export');
-        
+
         // Test JSON export
         $this->artisan('bootstrap:analyze', [
-            '--export' => $exportPath . '.json',
-            '--format' => 'json'
+            '--export' => $exportPath.'.json',
+            '--format' => 'json',
         ])->assertExitCode(0);
-        
-        $this->assertFileExists($exportPath . '.json');
-        
+
+        $this->assertFileExists($exportPath.'.json');
+
         // Test HTML export
         $this->artisan('bootstrap:analyze', [
-            '--export' => $exportPath . '.html', 
-            '--format' => 'html'
+            '--export' => $exportPath.'.html',
+            '--format' => 'html',
         ])->assertExitCode(0);
-        
-        $this->assertFileExists($exportPath . '.html');
+
+        $this->assertFileExists($exportPath.'.html');
 
         // Cleanup
-        File::delete([$exportPath . '.json', $exportPath . '.html']);
+        File::delete([$exportPath.'.json', $exportPath.'.html']);
     }
 
     private function createTestStructure(): void
@@ -175,7 +175,7 @@ class AnalyzeCommandTest extends TestCase
             resource_path('css'),
             resource_path('js'),
             public_path(),
-            storage_path('app')
+            storage_path('app'),
         ];
 
         foreach ($directories as $dir) {
@@ -186,8 +186,8 @@ class AnalyzeCommandTest extends TestCase
         $packageJson = [
             'name' => 'test-app',
             'dependencies' => [
-                'bootstrap' => '^4.6.0'
-            ]
+                'bootstrap' => '^4.6.0',
+            ],
         ];
         File::put(base_path('package.json'), json_encode($packageJson, JSON_PRETTY_PRINT));
     }
@@ -198,7 +198,7 @@ class AnalyzeCommandTest extends TestCase
             base_path('package.json'),
             resource_path('views/test.blade.php'),
             resource_path('js/test.js'),
-            public_path('test.html')
+            public_path('test.html'),
         ];
 
         foreach ($testFiles as $file) {

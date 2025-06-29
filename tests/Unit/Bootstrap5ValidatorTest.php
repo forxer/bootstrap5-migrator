@@ -64,8 +64,8 @@ class Bootstrap5ValidatorTest extends TestCase
         $packageJson = [
             'dependencies' => [
                 'bootstrap' => '^5.3.2',
-                'popper.js' => '^1.16.1'
-            ]
+                'popper.js' => '^1.16.1',
+            ],
         ];
         File::put(base_path('package.json'), json_encode($packageJson, JSON_PRETTY_PRINT));
 
@@ -97,7 +97,7 @@ class Bootstrap5ValidatorTest extends TestCase
         $this->assertEquals('❌ Classes obsolètes détectées', $results['css_status']);
         $this->assertStringContains('3 classes obsolètes', $results['css_details']);
         $this->assertTrue($results['has_critical_issues']);
-        
+
         $criticalIssues = collect($results['critical_issues'])->where('description', 'like', '%ml-2%');
         $this->assertNotEmpty($criticalIssues);
     }
@@ -116,7 +116,7 @@ class Bootstrap5ValidatorTest extends TestCase
     /** @test */
     public function it_validates_data_attributes_successfully()
     {
-        File::put(resource_path('views/clean-attrs.blade.php'), 
+        File::put(resource_path('views/clean-attrs.blade.php'),
             '<button data-bs-toggle="modal" data-bs-target="#modal">Clean</button>');
 
         $results = $this->validator->validateMigration();
@@ -128,14 +128,14 @@ class Bootstrap5ValidatorTest extends TestCase
     /** @test */
     public function it_detects_old_data_attributes()
     {
-        File::put(resource_path('views/old-attrs.blade.php'), 
+        File::put(resource_path('views/old-attrs.blade.php'),
             '<button data-toggle="modal" data-target="#modal" data-dismiss="alert">Old</button>');
 
         $results = $this->validator->validateMigration();
 
         $this->assertEquals('❌ Attributs obsolètes', $results['data_attributes_status']);
         $this->assertStringContains('3 attributs', $results['data_attributes_details']);
-        
+
         $fixableIssues = collect($results['fixable_issues'])->where('type', 'data_attribute');
         $this->assertCount(3, $fixableIssues);
     }
@@ -143,7 +143,7 @@ class Bootstrap5ValidatorTest extends TestCase
     /** @test */
     public function it_validates_cdn_links_successfully()
     {
-        File::put(public_path('clean-cdn.html'), 
+        File::put(public_path('clean-cdn.html'),
             '<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">');
 
         $results = $this->validator->validateMigration();
@@ -155,14 +155,14 @@ class Bootstrap5ValidatorTest extends TestCase
     /** @test */
     public function it_detects_old_cdn_links()
     {
-        File::put(public_path('old-cdn.html'), 
+        File::put(public_path('old-cdn.html'),
             '<link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" rel="stylesheet">');
 
         $results = $this->validator->validateMigration();
 
         $this->assertEquals('❌ Liens CDN obsolètes', $results['cdn_status']);
         $this->assertStringContains('1 liens', $results['cdn_details']);
-        
+
         $fixableIssues = collect($results['fixable_issues'])->where('type', 'cdn_link');
         $this->assertNotEmpty($fixableIssues);
     }
@@ -170,7 +170,7 @@ class Bootstrap5ValidatorTest extends TestCase
     /** @test */
     public function it_validates_javascript_successfully()
     {
-        File::put(resource_path('js/clean.js'), 
+        File::put(resource_path('js/clean.js'),
             'const modal = new bootstrap.Modal(document.getElementById("modal"));');
 
         $results = $this->validator->validateMigration();
@@ -182,7 +182,7 @@ class Bootstrap5ValidatorTest extends TestCase
     /** @test */
     public function it_detects_jquery_bootstrap_usage()
     {
-        File::put(resource_path('js/jquery.js'), 
+        File::put(resource_path('js/jquery.js'),
             '$(".modal").modal("show"); $(".dropdown").dropdown("toggle");');
 
         $results = $this->validator->validateMigration();
@@ -226,13 +226,13 @@ class Bootstrap5ValidatorTest extends TestCase
 
         $issue = [
             'action' => 'update_bootstrap_version',
-            'file' => base_path('package.json')
+            'file' => base_path('package.json'),
         ];
 
         $result = $this->validator->fixIssue($issue);
 
         $this->assertTrue($result);
-        
+
         $packageJson = json_decode(File::get(base_path('package.json')), true);
         $this->assertStringContains('5.3.2', $packageJson['dependencies']['bootstrap']);
     }
@@ -243,20 +243,20 @@ class Bootstrap5ValidatorTest extends TestCase
         $packageJson = [
             'dependencies' => [
                 'bootstrap' => '^5.3.2',
-                'popper.js' => '^1.16.1'
-            ]
+                'popper.js' => '^1.16.1',
+            ],
         ];
         File::put(base_path('package.json'), json_encode($packageJson, JSON_PRETTY_PRINT));
 
         $issue = [
             'action' => 'replace_popper',
-            'file' => base_path('package.json')
+            'file' => base_path('package.json'),
         ];
 
         $result = $this->validator->fixIssue($issue);
 
         $this->assertTrue($result);
-        
+
         $updated = json_decode(File::get(base_path('package.json')), true);
         $this->assertArrayNotHasKey('popper.js', $updated['dependencies']);
         $this->assertArrayHasKey('@popperjs/core', $updated['devDependencies']);
@@ -270,13 +270,13 @@ class Bootstrap5ValidatorTest extends TestCase
         $mlIssue = [
             'action' => 'replace_class',
             'file' => resource_path('views/fixable.blade.php'),
-            'class' => 'ml-2'
+            'class' => 'ml-2',
         ];
 
         $textIssue = [
             'action' => 'replace_class',
             'file' => resource_path('views/fixable.blade.php'),
-            'class' => 'text-left'
+            'class' => 'text-left',
         ];
 
         $this->assertTrue($this->validator->fixIssue($mlIssue));
@@ -292,19 +292,19 @@ class Bootstrap5ValidatorTest extends TestCase
     /** @test */
     public function it_can_fix_data_attributes()
     {
-        File::put(resource_path('views/data-fix.blade.php'), 
+        File::put(resource_path('views/data-fix.blade.php'),
             '<button data-toggle="modal" data-target="#modal">Fix</button>');
 
         $toggleIssue = [
             'action' => 'update_data_attribute',
             'file' => resource_path('views/data-fix.blade.php'),
-            'attribute' => 'data-toggle'
+            'attribute' => 'data-toggle',
         ];
 
         $targetIssue = [
             'action' => 'update_data_attribute',
             'file' => resource_path('views/data-fix.blade.php'),
-            'attribute' => 'data-target'
+            'attribute' => 'data-target',
         ];
 
         $this->assertTrue($this->validator->fixIssue($toggleIssue));
@@ -320,19 +320,19 @@ class Bootstrap5ValidatorTest extends TestCase
     /** @test */
     public function it_can_fix_cdn_links()
     {
-        File::put(public_path('cdn-fix.html'), 
+        File::put(public_path('cdn-fix.html'),
             '<link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" rel="stylesheet">');
 
         $issue = [
             'action' => 'update_cdn_link',
             'file' => public_path('cdn-fix.html'),
-            'old_link' => 'https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css'
+            'old_link' => 'https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css',
         ];
 
         $result = $this->validator->fixIssue($issue);
 
         $this->assertTrue($result);
-        
+
         $content = File::get(public_path('cdn-fix.html'));
         $this->assertStringContains('5.3.2', $content);
         $this->assertStringNotContains('4.6.0', $content);
@@ -343,7 +343,7 @@ class Bootstrap5ValidatorTest extends TestCase
     {
         $invalidIssue = [
             'action' => 'invalid_action',
-            'file' => 'nonexistent.file'
+            'file' => 'nonexistent.file',
         ];
 
         $result = $this->validator->fixIssue($invalidIssue);
@@ -354,14 +354,14 @@ class Bootstrap5ValidatorTest extends TestCase
     /** @test */
     public function it_fixes_margin_padding_variants_correctly()
     {
-        File::put(resource_path('views/variants.blade.php'), 
+        File::put(resource_path('views/variants.blade.php'),
             '<div class="ml-3 mr-auto pl-1 pr-5">Variants</div>');
 
         $issues = [
             ['action' => 'replace_class', 'file' => resource_path('views/variants.blade.php'), 'class' => 'ml-3'],
             ['action' => 'replace_class', 'file' => resource_path('views/variants.blade.php'), 'class' => 'mr-auto'],
             ['action' => 'replace_class', 'file' => resource_path('views/variants.blade.php'), 'class' => 'pl-1'],
-            ['action' => 'replace_class', 'file' => resource_path('views/variants.blade.php'), 'class' => 'pr-5']
+            ['action' => 'replace_class', 'file' => resource_path('views/variants.blade.php'), 'class' => 'pr-5'],
         ];
 
         foreach ($issues as $issue) {
@@ -407,7 +407,7 @@ class Bootstrap5ValidatorTest extends TestCase
             resource_path('css'),
             resource_path('js'),
             public_path(),
-            storage_path('app')
+            storage_path('app'),
         ];
 
         foreach ($directories as $dir) {
@@ -420,8 +420,8 @@ class Bootstrap5ValidatorTest extends TestCase
         $packageJson = [
             'dependencies' => [
                 'bootstrap' => '^5.3.2',
-                '@popperjs/core' => '^2.11.8'
-            ]
+                '@popperjs/core' => '^2.11.8',
+            ],
         ];
         File::put(base_path('package.json'), json_encode($packageJson, JSON_PRETTY_PRINT));
     }
@@ -431,8 +431,8 @@ class Bootstrap5ValidatorTest extends TestCase
         $packageJson = [
             'dependencies' => [
                 'bootstrap' => '^4.6.0',
-                'popper.js' => '^1.16.1'
-            ]
+                'popper.js' => '^1.16.1',
+            ],
         ];
         File::put(base_path('package.json'), json_encode($packageJson, JSON_PRETTY_PRINT));
     }
@@ -454,7 +454,7 @@ class Bootstrap5ValidatorTest extends TestCase
             resource_path('js/jquery.js'),
             public_path('clean-cdn.html'),
             public_path('old-cdn.html'),
-            public_path('cdn-fix.html')
+            public_path('cdn-fix.html'),
         ];
 
         foreach ($testFiles as $file) {

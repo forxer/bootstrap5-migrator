@@ -3,35 +3,46 @@
 namespace Bootstrap5Migrator\Commands;
 
 use Bootstrap5Migrator\Bootstrap5Migrator;
+use Bootstrap5Migrator\Traits\UsesPerformanceServices;
 use Exception;
 use Illuminate\Console\Command;
 
 class MigrateToBootstrap5Command extends Command
 {
+    use UsesPerformanceServices;
+
     protected $signature = 'bootstrap:migrate-to-5
                             {--dry-run : Afficher les changements sans les appliquer}
                             {--backup : Créer une sauvegarde avant migration}
                             {--force : Forcer la migration sans confirmation}
-                            {--skip-jquery : Ne pas supprimer jQuery (à gérer manuellement)}';
+                            {--skip-jquery : Ne pas supprimer jQuery (à gérer manuellement)}
+                            {--no-cache : Désactiver le cache pour cette migration}
+                            {--parallel : Utiliser le traitement parallèle (si disponible)}';
 
     protected $description = 'Migrate your Laravel application from Bootstrap 4.6 to Bootstrap 5.x';
 
     public function handle(Bootstrap5Migrator $migrator): ?int
     {
-        $this->info('🚀 Début de la migration vers Bootstrap 5...');
-        $this->warn('⚠️  ATTENTION: Bootstrap 5 supprime jQuery comme dépendance !');
+        $this->initializePerformanceServices();
+
+        $this->progressStep('Début de la migration vers Bootstrap 5', '🚀');
+        $this->warning('ATTENTION: Bootstrap 5 supprime jQuery comme dépendance !');
 
         if ($this->option('dry-run')) {
-            $this->warn('Mode dry-run activé - Aucun fichier ne sera modifié');
+            $this->warning('Mode dry-run activé - Aucun fichier ne sera modifié');
+        }
+
+        if (! $this->option('no-cache')) {
+            $this->info('Cache activé pour de meilleures performances');
         }
 
         if ($this->option('backup')) {
-            $this->info('📦 Création d\'une sauvegarde...');
+            $this->progressStep('Création d\'une sauvegarde', '📦');
             $migrator->createBackup();
         }
 
         // Analyse préliminaire
-        $this->info('🔍 Analyse de votre application...');
+        $this->progressStep('Analyse de votre application', '🔍');
         $analysis = $migrator->analyzeApplication();
 
         $this->displayAnalysis($analysis);
@@ -44,40 +55,43 @@ class MigrateToBootstrap5Command extends Command
 
         try {
             // 1. Mise à jour du package.json
-            $this->info('📝 Mise à jour du package.json...');
+            $this->progressStep('Mise à jour du package.json', '📝');
             $migrator->updatePackageJson($this->option('dry-run'), $this->option('skip-jquery'));
 
             // 2. Installation des dépendances
             if (! $this->option('dry-run')) {
-                $this->info('📦 Installation des nouvelles dépendances...');
+                $this->progressStep('Installation des nouvelles dépendances', '📦');
                 $migrator->installDependencies();
             }
 
             // 3. Migration des fichiers CSS/SCSS
-            $this->info('🎨 Migration des fichiers de style...');
+            $this->progressStep('Migration des fichiers de style', '🎨');
             $migrator->migrateStyleFiles($this->option('dry-run'));
 
             // 4. Migration des fichiers JavaScript
-            $this->info('⚡ Migration des fichiers JavaScript...');
+            $this->progressStep('Migration des fichiers JavaScript', '⚡');
             $migrator->migrateJavaScriptFiles($this->option('dry-run'));
 
             // 5. Migration des templates Blade
-            $this->info('🔧 Migration des templates Blade...');
+            $this->progressStep('Migration des templates Blade', '🔧');
             $migrator->migrateBladeTemplates($this->option('dry-run'));
 
             // 6. Compilation des assets
             if (! $this->option('dry-run')) {
-                $this->info('🔨 Compilation des assets...');
+                $this->progressStep('Compilation des assets', '🔨');
                 $migrator->compileAssets();
             }
 
-            $this->info('✅ Migration terminée avec succès !');
+            $this->success('Migration terminée avec succès !');
+            $this->displayPerformanceStats();
             $this->displayPostMigrationInstructions();
 
         } catch (Exception $exception) {
-            $this->error('❌ Erreur lors de la migration : '.$exception->getMessage());
+            $this->error('Erreur lors de la migration : '.$exception->getMessage());
 
             return 1;
+        } finally {
+            $this->cleanupPerformanceServices();
         }
 
         return 0;

@@ -5,11 +5,15 @@ namespace Bootstrap5Migrator\Traits;
 use Bootstrap5Migrator\Services\CacheService;
 use Bootstrap5Migrator\Services\FileProcessorService;
 use Bootstrap5Migrator\Services\ProgressService;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 
 trait UsesPerformanceServices
 {
     protected ?ProgressService $progressService = null;
+
     protected ?CacheService $cacheService = null;
+
     protected ?FileProcessorService $fileProcessorService = null;
 
     /**
@@ -20,11 +24,11 @@ trait UsesPerformanceServices
         if ($this->progressService === null) {
             $this->progressService = new ProgressService($this->output);
         }
-        
+
         if ($this->cacheService === null) {
             $this->cacheService = new CacheService();
         }
-        
+
         if ($this->fileProcessorService === null) {
             $this->fileProcessorService = new FileProcessorService();
         }
@@ -34,19 +38,21 @@ trait UsesPerformanceServices
      * Traite les fichiers avec optimisations de performance
      */
     protected function processFilesOptimized(
-        array $directories, 
-        array $extensions, 
+        array $directories,
+        array $extensions,
         callable $processor,
         bool $useCache = true,
         bool $useParallel = false
     ): array {
         $this->initializePerformanceServices();
-        
+
         // Vérifier le cache si activé
         if ($useCache) {
             $cachedResults = $this->getCachedResults($directories, $extensions);
+
             if ($cachedResults !== null) {
                 $this->progressService->info('Résultats récupérés du cache');
+
                 return $cachedResults;
             }
         }
@@ -54,14 +60,14 @@ trait UsesPerformanceServices
         // Traitement optimisé
         if ($useParallel) {
             $results = $this->fileProcessorService->processFilesInParallel(
-                $directories, 
-                $extensions, 
+                $directories,
+                $extensions,
                 $processor
             );
         } else {
             $results = $this->fileProcessorService->processFilesInChunks(
-                $directories, 
-                $extensions, 
+                $directories,
+                $extensions,
                 $processor
             );
         }
@@ -81,17 +87,17 @@ trait UsesPerformanceServices
     {
         if ($this->fileProcessorService !== null) {
             $stats = $this->fileProcessorService->formatStats();
-            
-            if (!empty($stats)) {
+
+            if (! empty($stats)) {
                 $this->progressService->displayStats($stats);
             }
         }
 
         if ($this->cacheService !== null) {
             $cacheStats = $this->cacheService->getCacheStats();
-            
+
             $this->progressService->info(
-                "Cache: {$cacheStats['disk_cache_files']} fichiers, {$cacheStats['total_cache_size']}"
+                \sprintf('Cache: %s fichiers, %s', $cacheStats['disk_cache_files'], $cacheStats['total_cache_size'])
             );
         }
     }
@@ -147,7 +153,7 @@ trait UsesPerformanceServices
         if ($this->progressService !== null) {
             $this->progressService->step($message, $emoji);
         } else {
-            $this->info("{$emoji} {$message}");
+            $this->info(\sprintf('%s %s', $emoji, $message));
         }
     }
 
@@ -172,7 +178,8 @@ trait UsesPerformanceServices
             return null;
         }
 
-        $cacheKey = md5(serialize($directories) . serialize($extensions));
+        $cacheKey = md5(serialize($directories).serialize($extensions));
+
         return $this->cacheService->getCachedDirectoryAnalysis($cacheKey);
     }
 
@@ -185,7 +192,7 @@ trait UsesPerformanceServices
             return;
         }
 
-        $cacheKey = md5(serialize($directories) . serialize($extensions));
+        $cacheKey = md5(serialize($directories).serialize($extensions));
         $this->cacheService->cacheDirectoryAnalysis($cacheKey, $results);
     }
 
@@ -198,9 +205,9 @@ trait UsesPerformanceServices
         // 1. L'option est activée
         // 2. Le système le supporte
         // 3. Il y a assez de fichiers pour que ça vaille le coup
-        
-        return $this->option('parallel') && 
-               function_exists('pcntl_fork') && 
+
+        return $this->option('parallel') &&
+               \function_exists('pcntl_fork') &&
                $this->getEstimatedFileCount() > 100;
     }
 
@@ -213,15 +220,16 @@ trait UsesPerformanceServices
             resource_path('views'),
             resource_path('css'),
             resource_path('js'),
-            public_path()
+            public_path(),
         ];
 
         $count = 0;
+
         foreach ($directories as $dir) {
             if (is_dir($dir)) {
                 $count += iterator_count(
-                    new \RecursiveIteratorIterator(
-                        new \RecursiveDirectoryIterator($dir, \RecursiveDirectoryIterator::SKIP_DOTS)
+                    new RecursiveIteratorIterator(
+                        new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS)
                     )
                 );
             }
@@ -247,7 +255,7 @@ trait UsesPerformanceServices
 
         // Si l'analyseur supporte les callbacks de progression
         if (method_exists($analyzer, 'setProgressCallback')) {
-            $analyzer->setProgressCallback(function ($message) {
+            $analyzer->setProgressCallback(function ($message): void {
                 $this->progressStep($message, '⚙️');
             });
         }

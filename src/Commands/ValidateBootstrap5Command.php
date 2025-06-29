@@ -2,20 +2,27 @@
 
 namespace Bootstrap5Migrator\Commands;
 
+use Bootstrap5Migrator\Traits\UsesPerformanceServices;
 use Bootstrap5Migrator\Validators\Bootstrap5Validator;
 use Illuminate\Console\Command;
 
 class ValidateBootstrap5Command extends Command
 {
+    use UsesPerformanceServices;
+
     protected $signature = 'bootstrap:validate
                             {--fix : Tenter de corriger automatiquement les problèmes mineurs}
-                            {--strict : Mode strict (échec si des problèmes sont trouvés)}';
+                            {--strict : Mode strict (échec si des problèmes sont trouvés)}
+                            {--no-cache : Désactiver le cache pour cette validation}
+                            {--parallel : Utiliser le traitement parallèle (si disponible)}';
 
     protected $description = 'Validate your Bootstrap 5 migration and detect remaining issues';
 
     public function handle(Bootstrap5Validator $validator): int
     {
-        $this->info('✅ Validation de votre migration Bootstrap 5...');
+        $this->initializePerformanceServices();
+
+        $this->progressStep('Validation de votre migration Bootstrap 5', '✅');
 
         $results = $validator->validateMigration();
 
@@ -26,10 +33,14 @@ class ValidateBootstrap5Command extends Command
         }
 
         if ($this->option('strict') && $results['has_critical_issues']) {
-            $this->error('❌ Validation échouée en mode strict');
+            $this->error('Validation échouée en mode strict');
+            $this->cleanupPerformanceServices();
 
             return 1;
         }
+
+        $this->displayPerformanceStats();
+        $this->cleanupPerformanceServices();
 
         return 0;
     }
@@ -83,19 +94,20 @@ class ValidateBootstrap5Command extends Command
 
     private function fixIssues(Bootstrap5Validator $validator, array $fixableIssues): void
     {
-        $this->info('🔧 Correction automatique des problèmes mineurs...');
+        $this->progressStep('Correction automatique des problèmes mineurs', '🔧');
 
         $fixed = 0;
+        $this->createProgressBar(\count($fixableIssues), 'Correction en cours');
 
         foreach ($fixableIssues as $issue) {
             if ($validator->fixIssue($issue)) {
-                $this->line('  ✅ Corrigé : '.$issue['description']);
+                $this->advanceProgress(1, 'Corrigé : '.$issue['description']);
                 $fixed++;
             } else {
-                $this->line('  ❌ Échec : '.$issue['description']);
+                $this->advanceProgress(1, 'Échec : '.$issue['description']);
             }
         }
 
-        $this->info(\sprintf('🎉 %d problème(s) corrigé(s) automatiquement', $fixed));
+        $this->finishProgress(\sprintf('%d problème(s) corrigé(s) automatiquement', $fixed));
     }
 }

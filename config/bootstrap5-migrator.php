@@ -399,7 +399,7 @@ return [
         'enable_smart_filtering' => true,   // Filtrage intelligent des fichiers
         'bootstrap_keywords' => [           // Mots-clés Bootstrap pour filtrage
             'bootstrap', 'ml-', 'mr-', 'pl-', 'pr-', 'text-left', 'text-right',
-            'form-group', 'badge-', 'data-toggle', 'data-target'
+            'form-group', 'badge-', 'data-toggle', 'data-target',
         ],
         'skip_empty_files' => true,         // Ignorer les fichiers vides
         'min_file_size' => 10,              // Taille minimale en bytes

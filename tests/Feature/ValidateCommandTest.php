@@ -76,8 +76,8 @@ class ValidateCommandTest extends TestCase
         $packageJson = [
             'dependencies' => [
                 'bootstrap' => '^4.6.0',
-                'popper.js' => '^1.16.1'
-            ]
+                'popper.js' => '^1.16.1',
+            ],
         ];
         File::put(base_path('package.json'), json_encode($packageJson, JSON_PRETTY_PRINT));
 
@@ -103,7 +103,7 @@ class ValidateCommandTest extends TestCase
     public function it_validates_data_attributes()
     {
         // Créer des fichiers avec des attributs obsolètes
-        File::put(resource_path('views/modal.blade.php'), 
+        File::put(resource_path('views/modal.blade.php'),
             '<button data-toggle="modal" data-target="#modal">Open</button>');
 
         $this->artisan('bootstrap:validate')
@@ -116,7 +116,7 @@ class ValidateCommandTest extends TestCase
     public function it_validates_cdn_links()
     {
         // Créer un fichier avec des liens CDN Bootstrap 4
-        File::put(public_path('index.html'), 
+        File::put(public_path('index.html'),
             '<link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" rel="stylesheet">');
 
         $this->artisan('bootstrap:validate')
@@ -184,8 +184,8 @@ class ValidateCommandTest extends TestCase
     {
         $packageJson = [
             'dependencies' => [
-                'bootstrap' => '^4.6.0'
-            ]
+                'bootstrap' => '^4.6.0',
+            ],
         ];
         File::put(base_path('package.json'), json_encode($packageJson, JSON_PRETTY_PRINT));
 
@@ -216,7 +216,7 @@ class ValidateCommandTest extends TestCase
     /** @test */
     public function it_auto_fixes_data_attributes()
     {
-        File::put(resource_path('views/modal.blade.php'), 
+        File::put(resource_path('views/modal.blade.php'),
             '<button data-toggle="modal">Open</button>');
 
         $this->artisan('bootstrap:validate', ['--fix'])
@@ -246,7 +246,7 @@ class ValidateCommandTest extends TestCase
             resource_path('css'),
             resource_path('js'),
             public_path(),
-            storage_path('app')
+            storage_path('app'),
         ];
 
         foreach ($directories as $dir) {
@@ -260,8 +260,8 @@ class ValidateCommandTest extends TestCase
         $packageJson = [
             'dependencies' => [
                 'bootstrap' => '^5.3.2',
-                '@popperjs/core' => '^2.11.8'
-            ]
+                '@popperjs/core' => '^2.11.8',
+            ],
         ];
         File::put(base_path('package.json'), json_encode($packageJson, JSON_PRETTY_PRINT));
 
@@ -275,13 +275,13 @@ class ValidateCommandTest extends TestCase
         $packageJson = [
             'dependencies' => [
                 'bootstrap' => '^4.6.0',
-                'popper.js' => '^1.16.1'
-            ]
+                'popper.js' => '^1.16.1',
+            ],
         ];
         File::put(base_path('package.json'), json_encode($packageJson, JSON_PRETTY_PRINT));
 
         // Fichiers avec problèmes
-        File::put(resource_path('views/problems.blade.php'), 
+        File::put(resource_path('views/problems.blade.php'),
             '<div class="ml-2 text-left" data-toggle="modal">Problems</div>');
     }
 
@@ -290,8 +290,8 @@ class ValidateCommandTest extends TestCase
         // Problèmes auto-corrigeables
         $packageJson = [
             'dependencies' => [
-                'bootstrap' => '^4.6.0'
-            ]
+                'bootstrap' => '^4.6.0',
+            ],
         ];
         File::put(base_path('package.json'), json_encode($packageJson, JSON_PRETTY_PRINT));
 
@@ -317,7 +317,7 @@ class ValidateCommandTest extends TestCase
             resource_path('views/critical.blade.php'),
             resource_path('js/app.js'),
             resource_path('js/critical.js'),
-            public_path('index.html')
+            public_path('index.html'),
         ];
 
         foreach ($testFiles as $file) {
