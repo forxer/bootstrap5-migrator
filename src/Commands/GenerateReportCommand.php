@@ -38,7 +38,7 @@ class GenerateReportCommand extends Command
             default => $this->generateHTMLReport($reporter, $reportData, $outputPath),
         };
 
-        $this->success('Rapport généré : '.$outputPath);
+        $this->showSuccess('Rapport généré : '.$outputPath);
 
         if ($this->option('include-screenshots')) {
             $this->generateScreenshots();
@@ -75,7 +75,7 @@ class GenerateReportCommand extends Command
         // Fallback vers HTML
         $htmlPath = str_replace('.pdf', '.html', $path);
         file_put_contents($htmlPath, $html);
-        $this->info('📄 Rapport HTML généré à la place : '.$htmlPath);
+        $this->showInfo('📄 Rapport HTML généré à la place : '.$htmlPath);
     }
 
     private function generateMarkdownReport(MigrationReporter $reporter, array $data, string $path): void
@@ -87,12 +87,12 @@ class GenerateReportCommand extends Command
     private function generateScreenshots(): void
     {
         $this->progressStep('Génération des captures d\'écran', '📸');
-        $this->warning('Fonctionnalité nécessitant Puppeteer ou un outil de capture similaire');
+        $this->showWarning('Fonctionnalité nécessitant Puppeteer ou un outil de capture similaire');
         // Cette fonctionnalité nécessiterait l'intégration avec un outil comme :
         // - Puppeteer (Node.js)
         // - Chrome/Chromium headless
         // - Selenium WebDriver
-        $this->info('Pour activer les captures d\'écran, installez puppeteer :');
+        $this->showInfo('Pour activer les captures d\'écran, installez puppeteer :');
         $this->line('npm install -g puppeteer');
     }
 }

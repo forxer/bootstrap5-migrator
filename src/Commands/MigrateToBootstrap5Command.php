@@ -26,14 +26,14 @@ class MigrateToBootstrap5Command extends Command
         $this->initializePerformanceServices();
 
         $this->progressStep('Début de la migration vers Bootstrap 5', '🚀');
-        $this->warning('ATTENTION: Bootstrap 5 supprime jQuery comme dépendance !');
+        $this->showWarning('ATTENTION: Bootstrap 5 supprime jQuery comme dépendance !');
 
         if ($this->option('dry-run')) {
-            $this->warning('Mode dry-run activé - Aucun fichier ne sera modifié');
+            $this->showWarning('Mode dry-run activé - Aucun fichier ne sera modifié');
         }
 
         if (! $this->option('no-cache')) {
-            $this->info('Cache activé pour de meilleures performances');
+            $this->showInfo('Cache activé pour de meilleures performances');
         }
 
         if ($this->option('backup')) {
@@ -48,7 +48,7 @@ class MigrateToBootstrap5Command extends Command
         $this->displayAnalysis($analysis);
 
         if (! $this->option('force') && ! $this->confirm('Voulez-vous continuer avec la migration ?')) {
-            $this->info('Migration annulée.');
+            $this->showInfo('Migration annulée.');
 
             return null;
         }
@@ -82,12 +82,12 @@ class MigrateToBootstrap5Command extends Command
                 $migrator->compileAssets();
             }
 
-            $this->success('Migration terminée avec succès !');
+            $this->showSuccess('Migration terminée avec succès !');
             $this->displayPerformanceStats();
             $this->displayPostMigrationInstructions();
 
         } catch (Exception $exception) {
-            $this->error('Erreur lors de la migration : '.$exception->getMessage());
+            $this->showError('Erreur lors de la migration : '.$exception->getMessage());
 
             return 1;
         } finally {
@@ -111,7 +111,7 @@ class MigrateToBootstrap5Command extends Command
             $this->warn('Classes obsolètes détectées : '.implode(', ', \array_slice($analysis['deprecated_classes'], 0, 10)));
 
             if (\count($analysis['deprecated_classes']) > 10) {
-                $this->info('... et '.(\count($analysis['deprecated_classes']) - 10).' autres');
+                $this->showInfo('... et '.(\count($analysis['deprecated_classes']) - 10).' autres');
             }
         }
     }
@@ -119,7 +119,7 @@ class MigrateToBootstrap5Command extends Command
     private function displayPostMigrationInstructions(): void
     {
         $this->newLine();
-        $this->info('📋 Instructions post-migration :');
+        $this->showInfo('📋 Instructions post-migration :');
         $this->line('1. ⚠️  Testez tous vos composants Bootstrap (modals, dropdowns, tooltips)');
         $this->line('2. 🔍 Vérifiez les formulaires (form-group → mb-3, form-control-file supprimé)');
         $this->line('3. 📱 Testez la responsivité (gutter classes changées)');

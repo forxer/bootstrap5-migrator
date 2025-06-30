@@ -33,7 +33,7 @@ class ValidateBootstrap5Command extends Command
         }
 
         if ($this->option('strict') && $results['has_critical_issues']) {
-            $this->error('Validation échouée en mode strict');
+            $this->showError('Validation échouée en mode strict');
             $this->cleanupPerformanceServices();
 
             return 1;
@@ -56,7 +56,7 @@ class ValidateBootstrap5Command extends Command
 
         // Problèmes critiques
         if (! empty($results['critical_issues'])) {
-            $this->error('🚨 Problèmes critiques :');
+            $this->showError('🚨 Problèmes critiques :');
 
             foreach ($results['critical_issues'] as $issue) {
                 $this->line(\sprintf('  • %s (%s)', $issue['description'], $issue['file']));
@@ -74,7 +74,7 @@ class ValidateBootstrap5Command extends Command
 
         // Recommandations
         if (! empty($results['recommendations'])) {
-            $this->info('💡 Recommandations :');
+            $this->showInfo('💡 Recommandations :');
 
             foreach ($results['recommendations'] as $recommendation) {
                 $this->line('  • '.$recommendation);

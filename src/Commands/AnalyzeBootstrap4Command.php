@@ -38,11 +38,11 @@ class AnalyzeBootstrap4Command extends Command
         $useParallel = $this->option('parallel');
 
         if ($useCache) {
-            $this->info('Cache activé - les analyses précédentes seront réutilisées');
+            $this->showInfo('Cache activé - les analyses précédentes seront réutilisées');
         }
 
         if ($useParallel) {
-            $this->info('Mode parallèle activé pour de meilleures performances');
+            $this->showInfo('Mode parallèle activé pour de meilleures performances');
         }
 
         // Démarrer l'analyse avec progression multi-étapes
@@ -122,13 +122,13 @@ class AnalyzeBootstrap4Command extends Command
             if ($this->option('export')) {
                 $outputPath = $this->option('export');
                 File::put($outputPath, $html);
-                $this->info('📄 Rapport HTML généré : '.$outputPath);
+                $this->showInfo('📄 Rapport HTML généré : '.$outputPath);
             } else {
-                $this->info('📄 Rapport HTML généré (utilisez --export pour sauvegarder)');
+                $this->showInfo('📄 Rapport HTML généré (utilisez --export pour sauvegarder)');
                 $this->displayTableFormat($analysis);
             }
         } catch (Exception $exception) {
-            $this->error('❌ Erreur lors de la génération du rapport HTML : '.$exception->getMessage());
+            $this->showError('❌ Erreur lors de la génération du rapport HTML : '.$exception->getMessage());
             $this->warn('Utilisation du format table à la place...');
             $this->displayTableFormat($analysis);
         }
@@ -137,7 +137,7 @@ class AnalyzeBootstrap4Command extends Command
     private function displayTableFormat(array $analysis): void
     {
         // Résumé général
-        $this->info('📊 Résumé de l\'analyse');
+        $this->showInfo('📊 Résumé de l\'analyse');
         $this->table(['Élément', 'Statut', 'Détails'], [
             ['Bootstrap Version', $analysis['general']['bootstrap_version'] ?? 'Non détecté', $this->getVersionStatus($analysis['general']['bootstrap_version'] ?? '')],
             ['jQuery Usage', $analysis['general']['jquery_usage'] ? 'Détecté' : 'Non détecté', $analysis['general']['jquery_usage'] ? '⚠️ À vérifier' : '✅ OK'],
@@ -169,7 +169,7 @@ class AnalyzeBootstrap4Command extends Command
 
             if (\count($analysis['deprecated_classes']['classes']) > 10) {
                 $remaining = \count($analysis['deprecated_classes']['classes']) - 10;
-                $this->info(\sprintf('... et %d autres classes obsolètes (utilisez --format=html pour voir toutes)', $remaining));
+                $this->showInfo(\sprintf('... et %d autres classes obsolètes (utilisez --format=html pour voir toutes)', $remaining));
             }
         }
 
@@ -192,7 +192,7 @@ class AnalyzeBootstrap4Command extends Command
 
         // Cas spéciaux (résumé)
         if (! empty($analysis['special_cases']['issues'])) {
-            $this->error('⚠️ Cas spéciaux nécessitant une attention manuelle :');
+            $this->showError('⚠️ Cas spéciaux nécessitant une attention manuelle :');
             $issuesSummary = [];
 
             foreach ($analysis['special_cases']['issues'] as $issue) {
@@ -203,7 +203,7 @@ class AnalyzeBootstrap4Command extends Command
                 $this->line(\sprintf('  • %s: %d occurrence(s)', $type, $count));
             }
 
-            $this->info('💡 Utilisez --format=html pour voir les détails complets');
+            $this->showInfo('💡 Utilisez --format=html pour voir les détails complets');
         }
     }
 
@@ -235,10 +235,10 @@ class AnalyzeBootstrap4Command extends Command
                     File::put($filePath, $content);
             }
 
-            $this->info('📁 Analyse exportée vers : '.$filePath);
+            $this->showInfo('📁 Analyse exportée vers : '.$filePath);
 
         } catch (Exception $exception) {
-            $this->error("❌ Erreur lors de l'export : ".$exception->getMessage());
+            $this->showError("❌ Erreur lors de l'export : ".$exception->getMessage());
         }
     }
 

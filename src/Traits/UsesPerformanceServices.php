@@ -153,26 +153,26 @@ trait UsesPerformanceServices
         if ($this->progressService !== null) {
             $this->progressService->step($message, $emoji);
         } else {
-            $this->info(\sprintf('%s %s', $emoji, $message));
+            $this->showInfo(\sprintf('%s %s', $emoji, $message));
         }
     }
 
     /**
      * Affiche un message de succès
      */
-    protected function success(string $message): void
+    protected function showSuccess(string $message): void
     {
         if ($this->progressService !== null) {
             $this->progressService->success($message);
         } else {
-            $this->info('✅ '.$message);
+            $this->showInfo('✅ '.$message);
         }
     }
 
     /**
      * Affiche un message d'erreur
      */
-    protected function error(string $message): void
+    protected function showError(string $message): void
     {
         if ($this->progressService !== null) {
             $this->progressService->error($message);
@@ -184,7 +184,7 @@ trait UsesPerformanceServices
     /**
      * Affiche un avertissement
      */
-    protected function warning(string $message): void
+    protected function showWarning(string $message): void
     {
         if ($this->progressService !== null) {
             $this->progressService->warning($message);
@@ -196,7 +196,7 @@ trait UsesPerformanceServices
     /**
      * Affiche des informations
      */
-    protected function info(string $message): void
+    protected function showInfo(string $message): void
     {
         if ($this->progressService !== null) {
             $this->progressService->info($message);
