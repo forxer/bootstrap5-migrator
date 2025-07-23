@@ -211,8 +211,13 @@ class Bootstrap5Migrator
 
             // Remplacement des variables SCSS
             foreach ($this->scssVariableChanges as $old => $new) {
-                if (str_contains($content, $old) && \in_array(str_contains($content, (string) $new), [0, false], true)) {
-                    $content = str_replace($old, $new, $content);
+                // Recherche la variable seule (sans valeur) et la remplace par la nouvelle définition complète
+                $pattern = '/^'.preg_quote($old, '/').':\s*[^;]+;/m';
+                if (preg_match($pattern, $content)) {
+                    $content = preg_replace($pattern, $new.';', $content);
+                } elseif (str_contains($content, $old.':') && !str_contains($content, $new)) {
+                    // Fallback pour les cas simples
+                    $content = preg_replace('/'.preg_quote($old, '/').':\s*[^;]+;/', $new.';', $content);
                 }
             }
 
